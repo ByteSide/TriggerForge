@@ -1,0 +1,35 @@
+# TriggerForge - Git Ignore
+
+# Sensitive configuration files
+config/config.php
+.htaccess
+.htpasswd
+
+# Local tools (not needed in repo)
+favicon-generator/
+
+# Logs
+logs/
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+

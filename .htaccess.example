@@ -1,0 +1,45 @@
+# TriggerForge - Security Configuration
+# HTTP Basic Authentication + HTTPS Redirect
+
+# Force HTTPS
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+</IfModule>
+
+# MIME Types for PWA support
+<IfModule mod_mime.c>
+    AddType application/manifest+json .webmanifest
+    AddType image/png .png
+    AddType image/svg+xml .svg
+</IfModule>
+
+# Exclude PWA files from authentication
+# Browsers need access to manifest and icons for PWA installation
+<FilesMatch "\.(webmanifest|png|svg|ico)$">
+    Satisfy Any
+    Allow from all
+</FilesMatch>
+
+# HTTP Basic Authentication
+# IMPORTANT: Update the path below to your server's absolute path!
+# Use pfad.php to find your absolute path, then delete pfad.php
+AuthType Basic
+AuthName "TriggerForge - Restricted Area"
+AuthUserFile /path/to/your/triggerforge/.htpasswd
+Require valid-user
+
+# Protect config directory from direct access
+<FilesMatch "config\.php$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Additional security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+

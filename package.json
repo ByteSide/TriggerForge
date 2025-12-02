@@ -1,0 +1,14 @@
+{
+  "name": "triggerforge",
+  "version": "1.0.0",
+  "description": "Webhook Trigger Interface - Trigger any webhook with a single click",
+  "scripts": {
+    "start": "php -S localhost:8000",
+    "start:win": "C:\\php\\php.exe -S localhost:8000",
+    "dev": "php -S localhost:8000"
+  },
+  "keywords": ["webhook", "trigger", "automation", "dashboard", "n8n", "zapier", "make"],
+  "author": "ByteSide.io",
+  "license": "MIT"
+}
+
