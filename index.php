@@ -252,7 +252,7 @@ if (!is_array($config)) {
                     <span>Cancel</span>
                 </button>
                 <button class="confirmation-modal-btn confirmation-modal-btn-confirm" id="confirmationModalBtnConfirm" type="button">
-                    <i class='bxs bxs-fire-alt'></i>
+                    <i class='bx bxs-fire-alt'></i>
                     <span>FIRE!</span>
                 </button>
             </div>
