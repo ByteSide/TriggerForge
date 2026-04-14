@@ -36,8 +36,23 @@ if (stripos($contentType, 'application/json') !== 0) {
     exit;
 }
 
-// Get webhook URL from POST data
-$rawInput = file_get_contents('php://input');
+// Reject unreasonably large bodies before reading them into memory. The
+// legitimate payload is a tiny JSON object (`{"webhook_url":"..."}`) — a
+// few hundred bytes — so an 8KB cap is generous. Without this, an attacker
+// could send a multi-MB body and eat server memory.
+$contentLength = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+if ($contentLength > 8192) {
+    http_response_code(413);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Payload too large'
+    ]);
+    exit;
+}
+
+// Get webhook URL from POST data (cap to 8KB as defense in depth if the
+// client lied about Content-Length).
+$rawInput = file_get_contents('php://input', false, null, 0, 8192);
 $input = json_decode($rawInput !== false ? $rawInput : '', true);
 if (!is_array($input)) {
     $input = [];
