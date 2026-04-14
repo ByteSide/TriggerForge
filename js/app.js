@@ -458,6 +458,15 @@ function triggerWebhook(button) {
         return;
     }
 
+    // Guard against webhooks with no URL configured for the current mode
+    // (e.g. test-only or prod-only entries). Without this, the request
+    // reaches the server as an empty body and surfaces as a generic error.
+    if (!webhookUrl) {
+        const mode = state.isTestMode ? 'TEST' : 'PROD';
+        showToast(`No ${mode} URL configured for this webhook`, 'warning');
+        return;
+    }
+
     // Check cooldown
     if (isOnCooldown(webhookId)) {
         const remaining = getRemainingCooldown(webhookId);
