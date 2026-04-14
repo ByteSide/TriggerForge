@@ -596,7 +596,7 @@ function updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, origina
         textSpan.textContent = originalText;
 
         // Brief glow animation when ready
-        button.style.boxShadow = 'var(--glow-yellow-strong)';
+        button.style.boxShadow = 'var(--glow-primary-strong)';
         setTimeout(() => {
             button.style.boxShadow = '';
         }, 500);
