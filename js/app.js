@@ -374,12 +374,7 @@ function createFavoriteButton(itemId, name, position, type, url = null, faviconS
                 showToast(`✗ Invalid or unsafe link URL`, 'error');
                 return;
             }
-            const opened = window.open(url, '_blank', 'noopener,noreferrer');
-            if (opened) {
-                showToast(`🔗 ${name} opened`, 'info');
-            } else {
-                showToast('Popup blocked — allow popups for this site', 'warning');
-            }
+            openLinkSafely(url, name);
         });
     }
 
@@ -468,6 +463,35 @@ function initLinkButtons() {
     });
 }
 
+// Open a URL in a new tab, handling mailto:/tel: protocols that don't
+// return a real window handle. Returns true on "looked successful".
+function openLinkSafely(url, name) {
+    let protocol = '';
+    try { protocol = new URL(url, window.location.href).protocol; } catch (e) {}
+
+    // mailto:/tel: hand off to the OS handler. window.open returns null
+    // for these in most browsers — so we use a synthetic <a> click instead
+    // and assume success rather than falsely warning "Popup blocked".
+    if (protocol === 'mailto:' || protocol === 'tel:') {
+        const a = document.createElement('a');
+        a.href = url;
+        a.rel = 'noopener noreferrer';
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        showToast(`🔗 ${name} opened`, 'info');
+        return;
+    }
+
+    const opened = window.open(url, '_blank', 'noopener,noreferrer');
+    if (opened) {
+        showToast(`🔗 ${name} opened`, 'info');
+    } else {
+        showToast('Popup blocked — allow popups for this site', 'warning');
+    }
+}
+
 function openCustomLink(button) {
     const url = button.getAttribute('data-link-url');
     const name = button.getAttribute('data-link-name');
@@ -480,14 +504,7 @@ function openCustomLink(button) {
     // Visual feedback
     button.classList.add('clicked');
 
-    // Open link in new tab. window.open returns null if a popup blocker
-    // intervenes — surface that instead of lying with a success toast.
-    const opened = window.open(url, '_blank', 'noopener,noreferrer');
-    if (opened) {
-        showToast(`🔗 ${name} opened`, 'info');
-    } else {
-        showToast('Popup blocked — allow popups for this site', 'warning');
-    }
+    openLinkSafely(url, name);
 
     // Reset animation
     setTimeout(() => {
