@@ -502,13 +502,15 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
         button.classList.remove('loading');
         if (icon) icon.className = originalIconClass;
 
-        if (data.success) {
+        const payload = (data && typeof data === 'object') ? data : {};
+        if (payload.success) {
             // Success state
             handleSuccess(button, webhookName);
             startCooldown(webhookId, button);
         } else {
             // Error state
-            handleError(button, data.message);
+            const msg = typeof payload.message === 'string' ? payload.message : 'Unknown error';
+            handleError(button, msg);
             button.disabled = false;
         }
     })
