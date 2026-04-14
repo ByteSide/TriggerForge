@@ -90,7 +90,7 @@ if (!is_array($config)) {
             <?php if (empty($config)): ?>
                 <div class="category-section">
                     <div class="favorites-empty">
-                        <i class='bx bx-error-circle'></i>
+                        <i class='bx bx-alert-circle'></i>
                         <p>No webhooks configured.</p>
                         <p style="margin-top: 8px;">Please edit <code>config/config.php</code></p>
                     </div>
@@ -181,12 +181,12 @@ if (!is_array($config)) {
                                                 <img src="<?php echo htmlspecialchars($faviconUrl); ?>"
                                                      alt=""
                                                      class="link-btn-favicon">
-                                                <i class='bx bx-link-external link-btn-icon-fallback' style="display:none;"></i>
+                                                <i class='bx bx-link-alt link-btn-icon-fallback' style="display:none;"></i>
                                             <?php else: ?>
-                                                <i class='bx bx-link-external link-btn-icon-fallback'></i>
+                                                <i class='bx bx-link-alt link-btn-icon-fallback'></i>
                                             <?php endif; ?>
                                             <span class="link-btn-text"><?php echo htmlspecialchars($itemName); ?></span>
-                                            <i class='bx bx-external-link link-btn-indicator'></i>
+                                            <i class='bx bx-link-alt link-btn-indicator'></i>
                                             <i class='bx bx-star link-btn-favorite' data-link-id="<?php echo htmlspecialchars($itemId); ?>" title="Add to favorites"></i>
                                         </button>
                                     <?php endif; ?>

@@ -314,12 +314,12 @@ function createFavoriteButton(itemId, name, position, type, url = null, faviconS
             btn.appendChild(img);
 
             const fallback = document.createElement('i');
-            fallback.className = 'bx bx-link-external favorite-link-btn-icon';
+            fallback.className = 'bx bx-link-alt favorite-link-btn-icon';
             fallback.style.display = 'none';
             btn.appendChild(fallback);
         } else {
             const icon = document.createElement('i');
-            icon.className = 'bx bx-link-external favorite-link-btn-icon';
+            icon.className = 'bx bx-link-alt favorite-link-btn-icon';
             btn.appendChild(icon);
         }
 
@@ -483,7 +483,7 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
     const icon = button.querySelector('.trigger-btn-icon');
     const originalIconClass = icon ? icon.className : '';
     if (icon) {
-        icon.className = 'bx bx-loader-alt trigger-btn-icon';
+        icon.className = 'bx bx-loader-lines trigger-btn-icon';
     }
     
     // AJAX Request
@@ -546,7 +546,7 @@ function handleError(button, message) {
     // Change icon temporarily
     const icon = button.querySelector('.trigger-btn-icon');
     const originalIconClass = icon ? icon.className : '';
-    if (icon) icon.className = 'bx bx-error-circle trigger-btn-icon';
+    if (icon) icon.className = 'bx bx-alert-circle trigger-btn-icon';
 
     // Add error class for shake animation
     button.classList.add('error');
@@ -648,8 +648,8 @@ function showToast(message, type = 'info') {
 
     const icons = {
         success: 'bx-check-circle',
-        error: 'bx-error-circle',
-        warning: 'bx-error',
+        error: 'bx-alert-circle',
+        warning: 'bx-alert-triangle',
         info: 'bx-info-circle'
     };
     const iconClass = icons[type] || icons.info;
