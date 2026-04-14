@@ -865,9 +865,14 @@ function showConfirmationModal(webhookName, callback) {
     backdrop.classList.add('active');
     modal.classList.add('active');
 
-    // Focus on confirm button for accessibility
+    // Focus on confirm button for accessibility. Gate on `.active` so that
+    // if the user dismisses the modal within the 100ms transition window
+    // (Escape / backdrop click), we don't yank focus away from the
+    // restoration target that hideConfirmationModal just set.
     setTimeout(() => {
-        newBtnConfirm.focus();
+        if (modal.classList.contains('active')) {
+            newBtnConfirm.focus();
+        }
     }, 100);
 }
 
