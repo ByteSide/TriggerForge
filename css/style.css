@@ -740,7 +740,8 @@ body {
     left: 0;
     height: 100%;
     background: rgba(1, 83, 81, 0.2);
-    transition: width var(--transition-base);
+    /* No transition: JS drives the width via rAF every frame, so a CSS
+       transition would lag behind and make the bar visibly drift. */
     pointer-events: none;
 }
 
