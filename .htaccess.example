@@ -49,6 +49,11 @@ Require valid-user
     </IfModule>
 </FilesMatch>
 
+# Block access to anything inside a VCS or OS metadata directory. FilesMatch
+# above only catches basenames, so e.g. .git/config (basename "config") slips
+# through — RedirectMatch returns 404 for any path containing these segments.
+RedirectMatch 404 (^|/)\.(git|svn|hg|bzr|DS_Store)(/|$)
+
 # Additional security headers
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
