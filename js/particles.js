@@ -50,8 +50,8 @@
         }
 
         reset() {
-            this.x = Math.random() * canvas.width;
-            this.y = Math.random() * canvas.height;
+            this.x = Math.random() * window.innerWidth;
+            this.y = Math.random() * window.innerHeight;
             this.baseX = this.x;
             this.baseY = this.y;
             
@@ -81,11 +81,14 @@
             this.baseX += this.vx;
             this.baseY += this.vy;
 
-            // Wrap around edges
-            if (this.baseX < -10) this.baseX = canvas.width + 10;
-            if (this.baseX > canvas.width + 10) this.baseX = -10;
-            if (this.baseY < -10) this.baseY = canvas.height + 10;
-            if (this.baseY > canvas.height + 10) this.baseY = -10;
+            // Wrap around edges (logical CSS-pixel bounds, not the scaled
+            // canvas.width/height which are in physical device pixels).
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            if (this.baseX < -10) this.baseX = w + 10;
+            if (this.baseX > w + 10) this.baseX = -10;
+            if (this.baseY < -10) this.baseY = h + 10;
+            if (this.baseY > h + 10) this.baseY = -10;
 
             // Mouse interaction
             if (mouse.x !== null && mouse.y !== null) {
@@ -194,11 +197,22 @@
     }
 
     /**
-     * Resize canvas to window size
+     * Resize canvas to window size. Scales by devicePixelRatio so particles
+     * render crisply on retina/high-DPI displays instead of being up-sampled
+     * from a 1x buffer. All subsequent drawing is done in CSS pixels thanks
+     * to setTransform(dpr,...).
      */
     function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        const dpr = window.devicePixelRatio || 1;
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        canvas.width = Math.max(1, Math.floor(w * dpr));
+        canvas.height = Math.max(1, Math.floor(h * dpr));
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        // setTransform replaces any existing transform — required because
+        // assigning canvas.width/height resets the 2D context state.
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
     /**
@@ -250,8 +264,9 @@
      * Animation loop
      */
     function animate() {
-        // Clear canvas
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Clear canvas. We clear the full physical buffer by dividing by
+        // the transform (ctx is already scaled by dpr via setTransform).
+        ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
         
         // Update and draw particles
         for (let i = 0; i < particles.length; i++) {
