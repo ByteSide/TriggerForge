@@ -172,7 +172,12 @@ curl_close($ch);
 
 // Process response. We log the raw curl error server-side but only send a
 // generic message to the client to avoid leaking internal details.
-if ($curlError) {
+//
+// Note: if the write-size cap aborted the transfer AFTER the HTTP status
+// was already received, curl_error is set (e.g. "Failed writing body")
+// but $httpCode reflects the real status. In that case the webhook
+// actually fired successfully and we should honor the HTTP code.
+if ($curlError && $httpCode === 0) {
     error_log('TriggerForge: webhook call failed - ' . $curlError);
     http_response_code(502);
     echo json_encode([
