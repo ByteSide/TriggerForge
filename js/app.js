@@ -214,9 +214,27 @@ function toggleFavorite(itemId, type) {
 function renderFavorites() {
     const favoritesScroll = document.getElementById('favoritesScroll');
     const favoritesEmpty = document.getElementById('favoritesEmpty');
-    
+
     if (!favoritesScroll || !favoritesEmpty) return;
-    
+
+    // Prune favorites whose target item no longer exists (e.g. a webhook
+    // was removed from config.php). Otherwise the stale entries silently
+    // eat into the MAX_FAVORITES budget without being visible to the user.
+    const beforeCount = state.favorites.length;
+    state.favorites = state.favorites.filter(fav => {
+        if (!fav || typeof fav.id !== 'string') return false;
+        if (fav.type === 'webhook') {
+            return !!document.querySelector(`.trigger-btn[data-webhook-id="${CSS.escape(fav.id)}"]`);
+        }
+        if (fav.type === 'link') {
+            return !!document.querySelector(`.custom-link-btn[data-link-id="${CSS.escape(fav.id)}"]`);
+        }
+        return false;
+    });
+    if (state.favorites.length !== beforeCount) {
+        saveState();
+    }
+
     if (state.favorites.length === 0) {
         favoritesEmpty.style.display = 'block';
         // Remove all favorite buttons
