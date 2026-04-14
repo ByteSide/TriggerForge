@@ -15,6 +15,17 @@ const state = {
 const COOLDOWN_DURATION = 10000; // 10 seconds
 const TOAST_DURATION = 4000; // 4 seconds
 const MAX_FAVORITES = 10;
+const ALLOWED_LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
+
+function isSafeLinkUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    try {
+        const parsed = new URL(url, window.location.href);
+        return ALLOWED_LINK_PROTOCOLS.has(parsed.protocol);
+    } catch (e) {
+        return false;
+    }
+}
 
 // === Initialization ===
 document.addEventListener('DOMContentLoaded', function() {
@@ -264,6 +275,8 @@ function createFavoriteButton(itemId, name, position, type, url = null, faviconS
         return span;
     };
 
+    btn.type = 'button';
+
     if (type === 'webhook') {
         btn.className = 'favorite-btn';
         btn.setAttribute('data-webhook-id', itemId);
@@ -313,6 +326,10 @@ function createFavoriteButton(itemId, name, position, type, url = null, faviconS
         btn.appendChild(buildLabel(name, category));
 
         btn.addEventListener('click', () => {
+            if (!isSafeLinkUrl(url)) {
+                showToast(`✗ Invalid or unsafe link URL`, 'error');
+                return;
+            }
             window.open(url, '_blank', 'noopener,noreferrer');
             showToast(`🔗 ${name} opened`, 'info');
         });
@@ -390,16 +407,21 @@ function initLinkButtons() {
 function openCustomLink(button) {
     const url = button.getAttribute('data-link-url');
     const name = button.getAttribute('data-link-name');
-    
+
+    if (!isSafeLinkUrl(url)) {
+        showToast(`✗ Invalid or unsafe link URL`, 'error');
+        return;
+    }
+
     // Visual feedback
     button.classList.add('clicked');
-    
+
     // Open link in new tab
     window.open(url, '_blank', 'noopener,noreferrer');
-    
+
     // Show toast
     showToast(`🔗 ${name} opened`, 'info');
-    
+
     // Reset animation
     setTimeout(() => {
         button.classList.remove('clicked');

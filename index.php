@@ -119,7 +119,8 @@ if (!is_array($config)) {
                                     
                                     <?php if ($type === 'webhook'): ?>
                                         <!-- Webhook Button -->
-                                        <button 
+                                        <button
+                                            type="button"
                                             class="trigger-btn"
                                             data-type="webhook"
                                             data-webhook-id="<?php echo htmlspecialchars($itemId); ?>"
@@ -146,6 +147,7 @@ if (!is_array($config)) {
                                                 : '';
                                         ?>
                                         <button
+                                            type="button"
                                             class="custom-link-btn"
                                             data-type="link"
                                             data-link-id="<?php echo htmlspecialchars($itemId); ?>"
