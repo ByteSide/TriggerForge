@@ -691,6 +691,13 @@ function updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, origina
         cooldownBar.style.width = '0%';
         textSpan.textContent = originalText;
 
+        // Clean up the expired entry instead of leaving it in localStorage
+        // until the next page load — keeps the state store tidy.
+        if (state.cooldowns[webhookId] !== undefined) {
+            delete state.cooldowns[webhookId];
+            saveState();
+        }
+
         // Brief glow animation when ready
         button.style.boxShadow = 'var(--glow-primary-strong)';
         setTimeout(() => {
