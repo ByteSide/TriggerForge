@@ -18,22 +18,35 @@
 # Exclude PWA files from authentication
 # Browsers need access to manifest and icons for PWA installation
 <FilesMatch "\.(webmanifest|png|svg|ico)$">
-    Satisfy Any
-    Allow from all
+    # Apache 2.4+
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    # Apache 2.2 fallback
+    <IfModule !mod_authz_core.c>
+        Satisfy Any
+        Allow from all
+    </IfModule>
 </FilesMatch>
 
 # HTTP Basic Authentication
 # IMPORTANT: Update the path below to your server's absolute path!
-# Use pfad.php to find your absolute path, then delete pfad.php
 AuthType Basic
 AuthName "TriggerForge - Restricted Area"
 AuthUserFile /path/to/your/triggerforge/.htpasswd
 Require valid-user
 
-# Protect config directory from direct access
-<FilesMatch "config\.php$">
-    Order allow,deny
-    Deny from all
+# Protect config directory and sensitive files from direct access
+<FilesMatch "(^\.|config\.php$|\.htpasswd$|composer\.(json|lock)$|package(-lock)?\.json$)">
+    # Apache 2.4+
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    # Apache 2.2 fallback
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
 </FilesMatch>
 
 # Additional security headers

@@ -39,34 +39,36 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // === State Management ===
-function loadState() {
+function loadStateKey(key, fallback, validator) {
     try {
-        // Load favorites
-        const favoritesData = localStorage.getItem('triggerforge_favorites');
-        if (favoritesData) {
-            state.favorites = JSON.parse(favoritesData);
-        }
-        
-        // Load category states
-        const categoryData = localStorage.getItem('triggerforge_categories_state');
-        if (categoryData) {
-            state.categoryStates = JSON.parse(categoryData);
-        }
-        
-        // Load cooldowns
-        const cooldownData = localStorage.getItem('triggerforge_cooldowns');
-        if (cooldownData) {
-            state.cooldowns = JSON.parse(cooldownData);
-        }
-        
-        // Load test mode state
-        const testModeData = localStorage.getItem('triggerforge_test_mode');
-        if (testModeData !== null) {
-            state.isTestMode = JSON.parse(testModeData);
-        }
+        const raw = localStorage.getItem(key);
+        if (raw === null) return fallback;
+        const parsed = JSON.parse(raw);
+        if (validator && !validator(parsed)) return fallback;
+        return parsed;
     } catch (e) {
-        console.warn('Error loading state:', e);
+        console.warn(`Error loading state key "${key}":`, e);
+        return fallback;
     }
+}
+
+function loadState() {
+    state.favorites = loadStateKey('triggerforge_favorites', [], Array.isArray);
+    state.categoryStates = loadStateKey(
+        'triggerforge_categories_state',
+        {},
+        v => v !== null && typeof v === 'object' && !Array.isArray(v)
+    );
+    state.cooldowns = loadStateKey(
+        'triggerforge_cooldowns',
+        {},
+        v => v !== null && typeof v === 'object' && !Array.isArray(v)
+    );
+    state.isTestMode = loadStateKey(
+        'triggerforge_test_mode',
+        false,
+        v => typeof v === 'boolean'
+    );
 }
 
 function saveState() {
@@ -158,10 +160,14 @@ function initFavorites() {
 }
 
 function migrateFavoritesFormat() {
+    if (!Array.isArray(state.favorites)) {
+        state.favorites = [];
+        saveState();
+        return;
+    }
     // Check if favorites are in old format (array of strings)
     if (state.favorites.length > 0 && typeof state.favorites[0] === 'string') {
-        const oldFavorites = [...state.favorites];
-        state.favorites = oldFavorites.map(id => ({
+        state.favorites = state.favorites.map(id => ({
             id: id,
             type: 'webhook'
         }));

@@ -20,8 +20,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // Get webhook URL from POST data
-$input = json_decode(file_get_contents('php://input'), true);
-$webhookUrl = $input['webhook_url'] ?? '';
+$rawInput = file_get_contents('php://input');
+$input = json_decode($rawInput !== false ? $rawInput : '', true);
+if (!is_array($input)) {
+    $input = [];
+}
+$webhookUrl = isset($input['webhook_url']) && is_string($input['webhook_url'])
+    ? $input['webhook_url']
+    : '';
 
 if (empty($webhookUrl)) {
     http_response_code(400);
@@ -71,9 +77,18 @@ if (!in_array($webhookUrl, $validUrls)) {
 // Send cURL request to webhook
 $ch = curl_init($webhookUrl);
 
+// Restrict to HTTP(S) only — blocks SSRF via file://, gopher://, ldap://, etc.
+// on redirects. Uses CURLPROTO_* constants when available, falls back to bitmask.
+$allowedProtocols = (defined('CURLPROTO_HTTP') ? CURLPROTO_HTTP : 1)
+    | (defined('CURLPROTO_HTTPS') ? CURLPROTO_HTTPS : 2);
+
 curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_FOLLOWLOCATION => true,
+    CURLOPT_MAXREDIRS => 3,
+    CURLOPT_PROTOCOLS => $allowedProtocols,
+    CURLOPT_REDIR_PROTOCOLS => $allowedProtocols,
+    CURLOPT_CONNECTTIMEOUT => 10,
     CURLOPT_TIMEOUT => 30,
     CURLOPT_POST => true,
     CURLOPT_HTTPHEADER => [
