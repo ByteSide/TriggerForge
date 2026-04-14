@@ -34,7 +34,23 @@
 AuthType Basic
 AuthName "TriggerForge - Restricted Area"
 AuthUserFile /path/to/your/triggerforge/.htpasswd
-Require valid-user
+
+# Let Let's Encrypt / certbot HTTP-01 challenges through Basic Auth. If
+# TriggerForge is deployed at the site root, this is required so automated
+# cert renewal (via .well-known/acme-challenge/) can succeed.
+SetEnvIf Request_URI "\.well-known/acme-challenge/" allow_acme
+<IfModule mod_authz_core.c>
+    <RequireAny>
+        Require env allow_acme
+        Require valid-user
+    </RequireAny>
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Allow from env=allow_acme
+    Satisfy Any
+    Require valid-user
+</IfModule>
 
 # Protect config, docs, and sensitive files from direct access.
 # Also blocks common editor/backup leftovers (~, .bak, .swp, .orig) so a
