@@ -6,17 +6,26 @@ Step-by-step guide for deploying to your web hosting provider.
 
 ### 1. Create .htpasswd
 
-Create your `.htpasswd` file locally:
+Generate your `.htpasswd` file **locally** — never send passwords to an online service:
 
-1. Go to: https://www.web2generators.com/apache-tools/htpasswd-generator
-2. Enter a username (e.g. `admin`)
-3. Enter a secure password
-4. Click "Generate"
-5. Copy the generated line
-6. Create a new file named `.htpasswd`
-7. Paste the line and save
+**Linux / macOS:**
+```bash
+htpasswd -c .htpasswd admin
+```
 
-**Important:** Note down your username and password - you'll need them to login!
+**Windows (PowerShell, if Apache tools are installed):**
+```powershell
+C:\xampp\apache\bin\htpasswd.exe -c .htpasswd admin
+```
+
+**Fallback (bcrypt via openssl + PHP one-liner):**
+```bash
+php -r 'echo "admin:".password_hash("your-password", PASSWORD_BCRYPT)."\n";' > .htpasswd
+```
+
+You'll be prompted for a password — pick a strong one. The resulting file will contain a single line like `admin:$apr1$...`.
+
+**Important:** Store the username and password in a password manager — you'll need them to log in.
 
 ### 2. Prepare .htaccess
 
@@ -112,30 +121,15 @@ In FileZilla: Right-click on file → "File Permissions"
 
 ### 1. Find Absolute Path
 
-Create a temporary file `pfad.php` directly in the `/triggerforge/` directory:
+Most hosting providers expose the absolute document root in their control panel (look for "Document Root", "Home Directory" or "Absolute Path"). Use that path and append `/triggerforge/.htpasswd`.
 
-```php
-<?php
-echo "Absolute path: " . __DIR__;
-echo "<br>";
-echo "Path for .htaccess: " . __DIR__ . "/.htpasswd";
-?>
+If it is not available, SSH into the server and run:
+```bash
+pwd
 ```
+from inside the `triggerforge` directory.
 
-Open it in your browser:
-```
-https://yourdomain.com/triggerforge/pfad.php
-```
-
-You'll see output like:
-```
-Absolute path: /home/username/public_html/triggerforge
-Path for .htaccess: /home/username/public_html/triggerforge/.htpasswd
-```
-
-Copy the path (second line)!
-
-**Important:** Delete `pfad.php` afterwards!
+**Avoid** creating a temporary PHP info/path script inside the web root — if you forget to delete it, it leaks server filesystem layout to anyone on the internet.
 
 ### 2. Update .htaccess
 

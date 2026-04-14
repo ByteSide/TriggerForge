@@ -96,10 +96,24 @@ if (!is_array($config)) {
                     </div>
                 </div>
             <?php else: ?>
+                <?php
+                    $usedCategoryIds = [];
+                    $categoryIdx = 0;
+                ?>
                 <?php foreach ($config as $categoryName => $webhooks): ?>
-                    <?php 
-                        // Create URL-safe ID from category name
-                        $categoryId = strtolower(str_replace(' ', '-', preg_replace('/[^A-Za-z0-9\s-]/', '', $categoryName)));
+                    <?php
+                        $categoryIdx++;
+                        // Create URL-safe ID from category name (guaranteed unique)
+                        $baseId = strtolower(str_replace(' ', '-', preg_replace('/[^A-Za-z0-9\s-]/', '', (string)$categoryName)));
+                        $baseId = trim(preg_replace('/-+/', '-', $baseId), '-');
+                        if ($baseId === '') {
+                            $baseId = 'category';
+                        }
+                        $categoryId = $baseId;
+                        if (in_array($categoryId, $usedCategoryIds, true)) {
+                            $categoryId = $baseId . '-' . $categoryIdx;
+                        }
+                        $usedCategoryIds[] = $categoryId;
                     ?>
                     <section class="category-section">
                         <div class="category-header" data-category-id="<?php echo htmlspecialchars($categoryId); ?>">

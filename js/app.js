@@ -779,22 +779,27 @@ function hideConfirmationModal() {
 // === Scroll to Top Button ===
 function initScrollToTop() {
     const scrollToTopBtn = document.getElementById('scrollToTopBtn');
-    
+
     if (!scrollToTopBtn) return;
-    
-    // Show/hide button based on scroll position
-    let scrollTimeout;
+
+    // Throttle scroll handler via rAF — updates visibility during continuous scrolling
+    let ticking = false;
+    const updateVisibility = () => {
+        if (window.scrollY > 300) {
+            scrollToTopBtn.classList.add('visible');
+        } else {
+            scrollToTopBtn.classList.remove('visible');
+        }
+        ticking = false;
+    };
     window.addEventListener('scroll', () => {
-        clearTimeout(scrollTimeout);
-        
-        scrollTimeout = setTimeout(() => {
-            if (window.scrollY > 300) {
-                scrollToTopBtn.classList.add('visible');
-            } else {
-                scrollToTopBtn.classList.remove('visible');
-            }
-        }, 100);
-    });
+        if (!ticking) {
+            requestAnimationFrame(updateVisibility);
+            ticking = true;
+        }
+    }, { passive: true });
+    // Set initial state in case page is already scrolled (e.g. on reload)
+    updateVisibility();
     
     // Scroll to top when clicked
     scrollToTopBtn.addEventListener('click', () => {
