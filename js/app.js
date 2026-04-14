@@ -714,8 +714,10 @@ function showToast(message, type = 'info') {
     const closeBtn = document.createElement('button');
     closeBtn.className = 'toast-close';
     closeBtn.type = 'button';
+    closeBtn.setAttribute('aria-label', 'Close notification');
     const closeIcon = document.createElement('i');
     closeIcon.className = 'bx bx-x';
+    closeIcon.setAttribute('aria-hidden', 'true');
     closeBtn.appendChild(closeIcon);
 
     toast.appendChild(iconEl);
