@@ -20,6 +20,22 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// Require Content-Type: application/json. Without this, a cross-site
+// <form enctype="text/plain"> can construct a body that happens to parse
+// as valid JSON (e.g. `{"webhook_url":"https://known/hook","a":"="}`) and
+// ride the victim's cached Basic Auth to fire any whitelisted webhook —
+// classic CSRF. Browsers cannot set Content-Type to application/json on a
+// simple form submission, so requiring it blocks the attack.
+$contentType = $_SERVER['CONTENT_TYPE'] ?? ($_SERVER['HTTP_CONTENT_TYPE'] ?? '');
+if (stripos($contentType, 'application/json') !== 0) {
+    http_response_code(415);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Content-Type must be application/json'
+    ]);
+    exit;
+}
+
 // Get webhook URL from POST data
 $rawInput = file_get_contents('php://input');
 $input = json_decode($rawInput !== false ? $rawInput : '', true);
