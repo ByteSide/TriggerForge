@@ -97,6 +97,23 @@ function saveState() {
 function initAccordion() {
     const categoryHeaders = document.querySelectorAll('.category-header');
 
+    // Prune categoryStates keys for categories that no longer exist in
+    // the DOM (e.g. after a category was renamed in config.php). Prevents
+    // stale boolean state from accumulating in localStorage forever.
+    const liveIds = new Set();
+    categoryHeaders.forEach(h => {
+        const id = h.getAttribute('data-category-id');
+        if (id) liveIds.add(id);
+    });
+    let prunedAny = false;
+    Object.keys(state.categoryStates).forEach(id => {
+        if (!liveIds.has(id)) {
+            delete state.categoryStates[id];
+            prunedAny = true;
+        }
+    });
+    if (prunedAny) saveState();
+
     // Load saved states
     categoryHeaders.forEach(header => {
         const categoryId = header.getAttribute('data-category-id');
