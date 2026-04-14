@@ -216,9 +216,8 @@ The `.htaccess` automatically redirects to HTTPS once available.
 - [ ] `/triggerforge/` directory created on server
 - [ ] All files and folders uploaded
 - [ ] File permissions set (if needed)
-- [ ] Absolute path found with `pfad.php`
+- [ ] Absolute path to `.htpasswd` obtained from hosting panel or SSH `pwd`
 - [ ] `.htaccess` updated with correct path
-- [ ] `pfad.php` deleted
 - [ ] Login tested in browser
 - [ ] At least one webhook tested
 - [ ] HTTPS working
