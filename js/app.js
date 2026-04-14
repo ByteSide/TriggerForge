@@ -511,7 +511,13 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
         }),
         signal: controller.signal
     })
-    .then(response => response.json())
+    .then(response => response.json().catch(() => ({
+        // Non-JSON body (e.g. Apache/PHP error page). Surface the HTTP
+        // status so the user gets a readable message instead of a
+        // generic "Unexpected token" parse error.
+        success: false,
+        message: `Server error (HTTP ${response.status})`
+    })))
     .then(data => {
         clearTimeout(timeoutId);
         // Remove loading state
