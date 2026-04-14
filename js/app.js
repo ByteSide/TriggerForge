@@ -533,28 +533,33 @@ function startCooldown(webhookId, button) {
 }
 
 function updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, originalText) {
+    // Bail if button was removed from DOM (e.g. after a re-render)
+    if (!button.isConnected) {
+        return;
+    }
+
     if (!isOnCooldown(webhookId)) {
         button.classList.remove('cooldown');
         button.disabled = false;
         cooldownBar.style.width = '0%';
         textSpan.textContent = originalText;
-        
+
         // Brief glow animation when ready
         button.style.boxShadow = 'var(--glow-yellow-strong)';
         setTimeout(() => {
             button.style.boxShadow = '';
         }, 500);
-        
+
         return;
     }
-    
+
     const remaining = getRemainingCooldown(webhookId);
     const secondsLeft = Math.ceil(remaining / 1000);
     const progress = ((COOLDOWN_DURATION - remaining) / COOLDOWN_DURATION) * 100;
-    
+
     textSpan.textContent = `Ready in ${secondsLeft}s...`;
     cooldownBar.style.width = `${progress}%`;
-    
+
     requestAnimationFrame(() => {
         updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, originalText);
     });
@@ -563,15 +568,19 @@ function updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, origina
 function restoreCooldowns() {
     Object.keys(state.cooldowns).forEach(webhookId => {
         if (isOnCooldown(webhookId)) {
-            const button = document.querySelector(`[data-webhook-id="${webhookId}"]`);
-            if (button) {
-                button.classList.add('cooldown');
-                button.disabled = true;
-                const cooldownBar = button.querySelector('.trigger-btn-cooldown');
-                const textSpan = button.querySelector('.trigger-btn-text');
-                const originalText = button.getAttribute('data-webhook-name');
-                updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, originalText);
-            }
+            // Scope selector to .trigger-btn so we never match favorite buttons
+            // in the quick-actions bar, which share the same data-webhook-id.
+            const button = document.querySelector(`.trigger-btn[data-webhook-id="${CSS.escape(webhookId)}"]`);
+            if (!button) return;
+
+            const cooldownBar = button.querySelector('.trigger-btn-cooldown');
+            const textSpan = button.querySelector('.trigger-btn-text');
+            if (!cooldownBar || !textSpan) return;
+
+            button.classList.add('cooldown');
+            button.disabled = true;
+            const originalText = button.getAttribute('data-webhook-name');
+            updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, originalText);
         } else {
             delete state.cooldowns[webhookId];
         }

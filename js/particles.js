@@ -38,6 +38,7 @@
     let mouse = { x: null, y: null };
     let animationId;
     let isReducedMotion = false;
+    let debouncedResize = null;
 
     /**
      * Particle Class
@@ -162,7 +163,8 @@
         createParticles();
         
         // Event listeners
-        window.addEventListener('resize', debounce(handleResize, 250));
+        debouncedResize = debounce(handleResize, 250);
+        window.addEventListener('resize', debouncedResize);
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseleave', handleMouseLeave);
         window.addEventListener('touchmove', handleTouchMove, { passive: true });
@@ -264,8 +266,12 @@
     function destroy() {
         if (animationId) {
             cancelAnimationFrame(animationId);
+            animationId = null;
         }
-        window.removeEventListener('resize', handleResize);
+        if (debouncedResize) {
+            window.removeEventListener('resize', debouncedResize);
+            debouncedResize = null;
+        }
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseleave', handleMouseLeave);
         window.removeEventListener('touchmove', handleTouchMove);
