@@ -51,7 +51,7 @@ if (!is_array($config)) {
             <div class="mode-toggle-container">
                 <span class="mode-toggle-label">Mode:</span>
                 <div class="mode-toggle" id="modeToggle">
-                    <input type="checkbox" id="modeToggleCheckbox" class="mode-toggle-input">
+                    <input type="checkbox" id="modeToggleCheckbox" class="mode-toggle-input" aria-label="Toggle test mode (unchecked = PROD, checked = TEST)">
                     <label for="modeToggleCheckbox" class="mode-toggle-switch">
                         <span class="mode-toggle-option mode-prod"><i class='bx bx-server'></i> PROD</span>
                         <span class="mode-toggle-option mode-test"><i class='bx bx-bug'></i> TEST</span>
