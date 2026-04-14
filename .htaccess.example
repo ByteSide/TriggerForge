@@ -76,7 +76,10 @@ RedirectMatch 404 (^|/)\.(git|svn|hg|bzr|DS_Store)(/|$)
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
     Header set X-Frame-Options "SAMEORIGIN"
-    Header set X-XSS-Protection "1; mode=block"
+    # X-XSS-Protection is deprecated — Chrome removed its XSS auditor, and
+    # `1; mode=block` had known bypass/side-channel issues in older engines.
+    # We rely on CSP (below) instead and explicitly disable the legacy filter.
+    Header set X-XSS-Protection "0"
     Header set Referrer-Policy "strict-origin-when-cross-origin"
     Header set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
     # CSP: self + required CDN/Google favicon. Adjust if you add external assets.
