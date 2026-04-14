@@ -187,7 +187,7 @@ function migrateFavoritesFormat() {
 }
 
 function toggleFavorite(itemId, type) {
-    const index = state.favorites.findIndex(fav => fav.id === itemId);
+    const index = state.favorites.findIndex(fav => fav.id === itemId && fav.type === type);
     
     if (index > -1) {
         // Remove from favorites
@@ -434,16 +434,27 @@ function triggerWebhook(button) {
     const webhookUrlTest = button.getAttribute('data-webhook-url-test');
     const webhookUrl = state.isTestMode ? webhookUrlTest : webhookUrlProd;
     const webhookName = button.getAttribute('data-webhook-name');
-    
+
+    // Prevent re-trigger while a request is already in-flight (rapid clicks
+    // through favorite buttons can otherwise fire the same webhook twice).
+    if (button.classList.contains('loading')) {
+        showToast('Already triggering…', 'warning');
+        return;
+    }
+
     // Check cooldown
     if (isOnCooldown(webhookId)) {
         const remaining = getRemainingCooldown(webhookId);
         showToast(`Please wait ${Math.ceil(remaining / 1000)}s`, 'warning');
         return;
     }
-    
+
     // Show confirmation modal before triggering
     showConfirmationModal(webhookName, () => {
+        // Re-check in case cooldown kicked in between open and confirm
+        if (button.classList.contains('loading') || isOnCooldown(webhookId)) {
+            return;
+        }
         // This callback is executed when user clicks "FIRE!"
         executeWebhook(button, webhookId, webhookUrl, webhookName);
     });
@@ -454,8 +465,10 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
     button.disabled = true;
     button.classList.add('loading');
     const icon = button.querySelector('.trigger-btn-icon');
-    const originalIconClass = icon.className;
-    icon.className = 'bx bx-loader-alt trigger-btn-icon';
+    const originalIconClass = icon ? icon.className : '';
+    if (icon) {
+        icon.className = 'bx bx-loader-alt trigger-btn-icon';
+    }
     
     // AJAX Request
     fetch('api/trigger.php', {
@@ -471,8 +484,8 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
     .then(data => {
         // Remove loading state
         button.classList.remove('loading');
-        icon.className = originalIconClass;
-        
+        if (icon) icon.className = originalIconClass;
+
         if (data.success) {
             // Success state
             handleSuccess(button, webhookName);
@@ -486,7 +499,7 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
     .catch(error => {
         // Connection error
         button.classList.remove('loading');
-        icon.className = originalIconClass;
+        if (icon) icon.className = originalIconClass;
         handleError(button, 'Connection error: ' + error.message);
         button.disabled = false;
     });
@@ -495,38 +508,38 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
 function handleSuccess(button, webhookName) {
     // Change icon temporarily
     const icon = button.querySelector('.trigger-btn-icon');
-    const originalIconClass = icon.className;
-    icon.className = 'bx bx-check-circle trigger-btn-icon';
-    
+    const originalIconClass = icon ? icon.className : '';
+    if (icon) icon.className = 'bx bx-check-circle trigger-btn-icon';
+
     // Add success class for color transition
     button.classList.add('success');
-    
+
     // Show toast
     showToast(`✓ ${webhookName} triggered successfully!`, 'success');
-    
+
     // Reset after 1 second
     setTimeout(() => {
         button.classList.remove('success');
-        icon.className = originalIconClass;
+        if (icon) icon.className = originalIconClass;
     }, 1000);
 }
 
 function handleError(button, message) {
     // Change icon temporarily
     const icon = button.querySelector('.trigger-btn-icon');
-    const originalIconClass = icon.className;
-    icon.className = 'bx bx-error-circle trigger-btn-icon';
-    
+    const originalIconClass = icon ? icon.className : '';
+    if (icon) icon.className = 'bx bx-error-circle trigger-btn-icon';
+
     // Add error class for shake animation
     button.classList.add('error');
-    
+
     // Show toast
     showToast(`✗ Error: ${message}`, 'error');
-    
+
     // Reset after 1 second
     setTimeout(() => {
         button.classList.remove('error');
-        icon.className = originalIconClass;
+        if (icon) icon.className = originalIconClass;
     }, 1000);
 }
 
