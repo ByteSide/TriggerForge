@@ -357,8 +357,12 @@ function createFavoriteButton(itemId, name, position, type, url = null, faviconS
                 showToast(`✗ Invalid or unsafe link URL`, 'error');
                 return;
             }
-            window.open(url, '_blank', 'noopener,noreferrer');
-            showToast(`🔗 ${name} opened`, 'info');
+            const opened = window.open(url, '_blank', 'noopener,noreferrer');
+            if (opened) {
+                showToast(`🔗 ${name} opened`, 'info');
+            } else {
+                showToast('Popup blocked — allow popups for this site', 'warning');
+            }
         });
     }
 
@@ -459,11 +463,14 @@ function openCustomLink(button) {
     // Visual feedback
     button.classList.add('clicked');
 
-    // Open link in new tab
-    window.open(url, '_blank', 'noopener,noreferrer');
-
-    // Show toast
-    showToast(`🔗 ${name} opened`, 'info');
+    // Open link in new tab. window.open returns null if a popup blocker
+    // intervenes — surface that instead of lying with a success toast.
+    const opened = window.open(url, '_blank', 'noopener,noreferrer');
+    if (opened) {
+        showToast(`🔗 ${name} opened`, 'info');
+    } else {
+        showToast('Popup blocked — allow popups for this site', 'warning');
+    }
 
     // Reset animation
     setTimeout(() => {
