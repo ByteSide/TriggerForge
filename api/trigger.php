@@ -40,7 +40,9 @@ if (stripos($contentType, 'application/json') !== 0) {
 // legitimate payload is a tiny JSON object (`{"webhook_url":"..."}`) — a
 // few hundred bytes — so an 8KB cap is generous. Without this, an attacker
 // could send a multi-MB body and eat server memory.
-$contentLength = (int)($_SERVER['CONTENT_LENGTH'] ?? 0);
+// Some CGI/FastCGI setups only expose HTTP_CONTENT_LENGTH, not the
+// standard CONTENT_LENGTH — check both to stay compatible.
+$contentLength = (int)($_SERVER['CONTENT_LENGTH'] ?? ($_SERVER['HTTP_CONTENT_LENGTH'] ?? 0));
 if ($contentLength > 8192) {
     http_response_code(413);
     echo json_encode([
