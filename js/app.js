@@ -83,14 +83,21 @@ function loadState() {
 }
 
 function saveState() {
-    try {
-        localStorage.setItem('triggerforge_favorites', JSON.stringify(state.favorites));
-        localStorage.setItem('triggerforge_categories_state', JSON.stringify(state.categoryStates));
-        localStorage.setItem('triggerforge_cooldowns', JSON.stringify(state.cooldowns));
-        localStorage.setItem('triggerforge_test_mode', JSON.stringify(state.isTestMode));
-    } catch (e) {
-        console.warn('Error saving state:', e);
-    }
+    // Write each key independently so a quota error on one key doesn't
+    // leave the remaining keys stale and out of sync with in-memory state.
+    const writes = [
+        ['triggerforge_favorites', state.favorites],
+        ['triggerforge_categories_state', state.categoryStates],
+        ['triggerforge_cooldowns', state.cooldowns],
+        ['triggerforge_test_mode', state.isTestMode]
+    ];
+    writes.forEach(([key, value]) => {
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+        } catch (e) {
+            console.warn(`Error saving state key "${key}":`, e);
+        }
+    });
 }
 
 // === Accordion Functionality ===
