@@ -174,8 +174,7 @@ if (!is_array($config)) {
                                             <?php if ($faviconUrl !== ''): ?>
                                                 <img src="<?php echo htmlspecialchars($faviconUrl); ?>"
                                                      alt=""
-                                                     class="link-btn-favicon"
-                                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                                                     class="link-btn-favicon">
                                                 <i class='bx bx-link-external link-btn-icon-fallback' style="display:none;"></i>
                                             <?php else: ?>
                                                 <i class='bx bx-link-external link-btn-icon-fallback'></i>

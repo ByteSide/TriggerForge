@@ -392,7 +392,7 @@ function initWebhookButtons() {
 // === Link Buttons ===
 function initLinkButtons() {
     const linkButtons = document.querySelectorAll('.custom-link-btn');
-    
+
     linkButtons.forEach(button => {
         button.addEventListener('click', function(e) {
             // Ignore if clicking on favorite star
@@ -401,6 +401,22 @@ function initLinkButtons() {
             }
             openCustomLink(this);
         });
+    });
+
+    // Attach favicon error fallback without inline handlers (CSP-safe).
+    // Must handle already-errored images too (e.g. bfcache restore).
+    document.querySelectorAll('.link-btn-favicon').forEach(img => {
+        const handleError = () => {
+            img.style.display = 'none';
+            if (img.nextElementSibling) {
+                img.nextElementSibling.style.display = 'inline-block';
+            }
+        };
+        if (img.complete && img.naturalWidth === 0) {
+            handleError();
+        } else {
+            img.addEventListener('error', handleError, { once: true });
+        }
     });
 }
 
@@ -703,8 +719,8 @@ function initModeToggle() {
 
 function updateModeUI() {
     const testModeBanner = document.getElementById('testModeBanner');
-    const allButtons = document.querySelectorAll('.trigger-btn');
-    
+    if (!testModeBanner) return;
+
     // Update banner visibility and body class
     if (state.isTestMode) {
         testModeBanner.classList.remove('hidden');
