@@ -102,9 +102,11 @@ if (!is_array($config)) {
                 ?>
                 <?php foreach ($config as $categoryName => $webhooks): ?>
                     <?php
+                        if (!is_array($webhooks)) { continue; }
                         $categoryIdx++;
+                        $categoryNameStr = (string)$categoryName;
                         // Create URL-safe ID from category name (guaranteed unique)
-                        $baseId = strtolower(str_replace(' ', '-', preg_replace('/[^A-Za-z0-9\s-]/', '', (string)$categoryName)));
+                        $baseId = strtolower(str_replace(' ', '-', preg_replace('/[^A-Za-z0-9\s-]/', '', $categoryNameStr)));
                         $baseId = trim(preg_replace('/-+/', '-', $baseId), '-');
                         if ($baseId === '') {
                             $baseId = 'category';
@@ -118,19 +120,22 @@ if (!is_array($config)) {
                     <section class="category-section">
                         <div class="category-header" data-category-id="<?php echo htmlspecialchars($categoryId); ?>">
                             <i class='bx bx-folder category-header-icon'></i>
-                            <h2 class="category-title"><?php echo htmlspecialchars($categoryName); ?></h2>
+                            <h2 class="category-title"><?php echo htmlspecialchars($categoryNameStr); ?></h2>
                             <i class='bx bx-chevron-down category-icon'></i>
                         </div>
-                        
+
                         <div class="category-content" data-category-id="<?php echo htmlspecialchars($categoryId); ?>">
                             <div class="button-grid">
                                 <?php foreach ($webhooks as $index => $item): ?>
-                                    <?php 
+                                    <?php
+                                        if (!is_array($item)) { continue; }
                                         // Determine type (default: webhook for backwards compatibility)
                                         $type = $item['type'] ?? 'webhook';
                                         $itemId = $categoryId . '-' . $index;
+                                        $itemName = (string)($item['name'] ?? '');
+                                        $itemDesc = (string)($item['description'] ?? $itemName);
                                     ?>
-                                    
+
                                     <?php if ($type === 'webhook'): ?>
                                         <!-- Webhook Button -->
                                         <button
@@ -138,24 +143,25 @@ if (!is_array($config)) {
                                             class="trigger-btn"
                                             data-type="webhook"
                                             data-webhook-id="<?php echo htmlspecialchars($itemId); ?>"
-                                            data-webhook-url-prod="<?php echo htmlspecialchars($item['webhook_url_prod']); ?>"
-                                            data-webhook-url-test="<?php echo htmlspecialchars($item['webhook_url_test']); ?>"
-                                            data-webhook-name="<?php echo htmlspecialchars($item['name']); ?>"
-                                            data-category="<?php echo htmlspecialchars($categoryName); ?>"
-                                            title="<?php echo htmlspecialchars($item['description'] ?? $item['name']); ?>"
-                                            aria-label="<?php echo htmlspecialchars($item['name']); ?>"
+                                            data-webhook-url-prod="<?php echo htmlspecialchars((string)($item['webhook_url_prod'] ?? '')); ?>"
+                                            data-webhook-url-test="<?php echo htmlspecialchars((string)($item['webhook_url_test'] ?? '')); ?>"
+                                            data-webhook-name="<?php echo htmlspecialchars($itemName); ?>"
+                                            data-category="<?php echo htmlspecialchars($categoryNameStr); ?>"
+                                            title="<?php echo htmlspecialchars($itemDesc); ?>"
+                                            aria-label="<?php echo htmlspecialchars($itemName); ?>"
                                         >
                                             <div class="trigger-btn-cooldown"></div>
                                             <i class='bx bx-bolt trigger-btn-icon'></i>
-                                            <span class="trigger-btn-text"><?php echo htmlspecialchars($item['name']); ?></span>
+                                            <span class="trigger-btn-text"><?php echo htmlspecialchars($itemName); ?></span>
                                             <i class='bx bx-star trigger-btn-favorite' data-webhook-id="<?php echo htmlspecialchars($itemId); ?>" title="Add to favorites"></i>
                                         </button>
-                                    
+
                                     <?php elseif ($type === 'link'): ?>
                                         <!-- Custom Link Button -->
                                         <?php
+                                            $itemUrl = (string)($item['url'] ?? '');
                                             // Generate favicon URL (guard against malformed URLs / missing host)
-                                            $domain = !empty($item['url']) ? parse_url($item['url'], PHP_URL_HOST) : null;
+                                            $domain = $itemUrl !== '' ? parse_url($itemUrl, PHP_URL_HOST) : null;
                                             $faviconUrl = $domain
                                                 ? 'https://www.google.com/s2/favicons?domain=' . urlencode($domain) . '&sz=32'
                                                 : '';
@@ -165,11 +171,11 @@ if (!is_array($config)) {
                                             class="custom-link-btn"
                                             data-type="link"
                                             data-link-id="<?php echo htmlspecialchars($itemId); ?>"
-                                            data-link-url="<?php echo htmlspecialchars($item['url'] ?? ''); ?>"
-                                            data-link-name="<?php echo htmlspecialchars($item['name']); ?>"
-                                            data-category="<?php echo htmlspecialchars($categoryName); ?>"
-                                            title="<?php echo htmlspecialchars($item['description'] ?? $item['name']); ?>"
-                                            aria-label="<?php echo htmlspecialchars($item['name']); ?>"
+                                            data-link-url="<?php echo htmlspecialchars($itemUrl); ?>"
+                                            data-link-name="<?php echo htmlspecialchars($itemName); ?>"
+                                            data-category="<?php echo htmlspecialchars($categoryNameStr); ?>"
+                                            title="<?php echo htmlspecialchars($itemDesc); ?>"
+                                            aria-label="<?php echo htmlspecialchars($itemName); ?>"
                                         >
                                             <?php if ($faviconUrl !== ''): ?>
                                                 <img src="<?php echo htmlspecialchars($faviconUrl); ?>"
@@ -179,7 +185,7 @@ if (!is_array($config)) {
                                             <?php else: ?>
                                                 <i class='bx bx-link-external link-btn-icon-fallback'></i>
                                             <?php endif; ?>
-                                            <span class="link-btn-text"><?php echo htmlspecialchars($item['name']); ?></span>
+                                            <span class="link-btn-text"><?php echo htmlspecialchars($itemName); ?></span>
                                             <i class='bx bx-external-link link-btn-indicator'></i>
                                             <i class='bx bx-star link-btn-favorite' data-link-id="<?php echo htmlspecialchars($itemId); ?>" title="Add to favorites"></i>
                                         </button>
