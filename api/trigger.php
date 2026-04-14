@@ -50,16 +50,30 @@ if (!file_exists($configPath)) {
     exit;
 }
 
-$config = require $configPath;
+$config = @require $configPath;
+if (!is_array($config)) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Invalid configuration'
+    ]);
+    exit;
+}
 $validUrls = [];
 
 // Collect all configured URLs (Test + Prod)
 foreach ($config as $category => $webhooks) {
+    if (!is_array($webhooks)) {
+        continue;
+    }
     foreach ($webhooks as $webhook) {
-        if (isset($webhook['webhook_url_test'])) {
+        if (!is_array($webhook)) {
+            continue;
+        }
+        if (isset($webhook['webhook_url_test']) && is_string($webhook['webhook_url_test'])) {
             $validUrls[] = $webhook['webhook_url_test'];
         }
-        if (isset($webhook['webhook_url_prod'])) {
+        if (isset($webhook['webhook_url_prod']) && is_string($webhook['webhook_url_prod'])) {
             $validUrls[] = $webhook['webhook_url_prod'];
         }
     }
@@ -107,12 +121,14 @@ $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $curlError = curl_error($ch);
 curl_close($ch);
 
-// Process response
+// Process response. We log the raw curl error server-side but only send a
+// generic message to the client to avoid leaking internal details.
 if ($curlError) {
-    http_response_code(500);
+    error_log('TriggerForge: webhook call failed - ' . $curlError);
+    http_response_code(502);
     echo json_encode([
         'success' => false,
-        'message' => 'Webhook call failed: ' . $curlError
+        'message' => 'Upstream webhook could not be reached'
     ]);
     exit;
 }
@@ -124,10 +140,13 @@ if ($httpCode >= 200 && $httpCode < 300) {
         'http_code' => $httpCode
     ]);
 } else {
-    http_response_code($httpCode);
+    // Only forward recognized 4xx/5xx codes — otherwise map to 502 so PHP
+    // never emits a nonsense status line to the client.
+    $safeCode = ($httpCode >= 400 && $httpCode < 600) ? $httpCode : 502;
+    http_response_code($safeCode);
     echo json_encode([
         'success' => false,
-        'message' => 'Webhook call failed (HTTP ' . $httpCode . ')',
-        'http_code' => $httpCode
+        'message' => 'Webhook call failed (HTTP ' . (int)$httpCode . ')',
+        'http_code' => (int)$httpCode
     ]);
 }
