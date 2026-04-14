@@ -816,18 +816,24 @@ function initConfirmationModal() {
     // Confirm button will be handled dynamically with callback
 }
 
+let confirmationModalReturnFocus = null;
+
 function showConfirmationModal(webhookName, callback) {
     const modal = document.getElementById('confirmationModal');
     const backdrop = document.getElementById('confirmationModalBackdrop');
     const webhookNameElement = document.getElementById('confirmationModalWebhookName');
     const btnConfirm = document.getElementById('confirmationModalBtnConfirm');
-    
+
     if (!modal || !backdrop || !webhookNameElement || !btnConfirm) {
         console.warn('Confirmation modal elements not found');
         // Fallback: execute callback immediately
         if (callback) callback();
         return;
     }
+
+    // Remember what was focused so we can restore it when the modal closes
+    // (keyboard users otherwise lose their place when the modal dismisses).
+    confirmationModalReturnFocus = document.activeElement;
     
     // Set webhook name
     webhookNameElement.textContent = webhookName;
@@ -856,11 +862,16 @@ function showConfirmationModal(webhookName, callback) {
 function hideConfirmationModal() {
     const modal = document.getElementById('confirmationModal');
     const backdrop = document.getElementById('confirmationModalBackdrop');
-    
+
     if (!modal || !backdrop) return;
-    
+
     modal.classList.remove('active');
     backdrop.classList.remove('active');
+
+    if (confirmationModalReturnFocus && typeof confirmationModalReturnFocus.focus === 'function') {
+        try { confirmationModalReturnFocus.focus(); } catch (e) { /* detached node */ }
+    }
+    confirmationModalReturnFocus = null;
 }
 
 // === Scroll to Top Button ===
