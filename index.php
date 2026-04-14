@@ -231,7 +231,7 @@ if (!is_array($config)) {
     </div>
     
     <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
+    <div class="toast-container" id="toastContainer" role="status" aria-live="polite" aria-atomic="false"></div>
     
     <!-- Confirmation Modal -->
     <div class="confirmation-modal-backdrop" id="confirmationModalBackdrop"></div>
