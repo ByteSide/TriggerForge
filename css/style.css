@@ -564,7 +564,10 @@ body {
 .category-content {
     max-height: 10000px;
     overflow: hidden;
-    transition: max-height var(--transition-fast), opacity var(--transition-fast);
+    /* visibility toggles instantly on expand so content is immediately
+       interactive, and with a delay on collapse (set on .collapsed) so
+       the opacity fade-out can play before the content is hidden. */
+    transition: max-height var(--transition-fast), opacity var(--transition-fast), visibility 0s;
     opacity: 1;
     visibility: visible;
 }
@@ -576,6 +579,7 @@ body {
        max-height:0 alone leaves them focusable, which lets keyboard
        users land on invisible, clipped triggers. */
     visibility: hidden;
+    transition: max-height var(--transition-fast), opacity var(--transition-fast), visibility 0s var(--transition-fast);
 }
 
 /* === Button Grid === */
