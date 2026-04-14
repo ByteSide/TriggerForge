@@ -677,7 +677,12 @@ function restoreCooldowns() {
             // Scope selector to .trigger-btn so we never match favorite buttons
             // in the quick-actions bar, which share the same data-webhook-id.
             const button = document.querySelector(`.trigger-btn[data-webhook-id="${CSS.escape(webhookId)}"]`);
-            if (!button) return;
+            if (!button) {
+                // Orphan cooldown for a webhook that no longer exists in
+                // config — drop it so it doesn't linger in state forever.
+                delete state.cooldowns[webhookId];
+                return;
+            }
 
             const cooldownBar = button.querySelector('.trigger-btn-cooldown');
             const textSpan = button.querySelector('.trigger-btn-text');
