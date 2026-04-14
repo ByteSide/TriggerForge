@@ -131,7 +131,16 @@ if (!is_array($config)) {
                                         if (!is_array($item)) { continue; }
                                         // Determine type (default: webhook for backwards compatibility)
                                         $type = $item['type'] ?? 'webhook';
-                                        $itemId = $categoryId . '-' . $index;
+                                        // Sanitize the index so string keys with special characters
+                                        // can't produce an itemId that breaks JS CSS selectors
+                                        // (data-webhook-id="..." queries) or localStorage keys.
+                                        $safeIndex = is_int($index)
+                                            ? (string)$index
+                                            : preg_replace('/[^A-Za-z0-9_-]/', '', (string)$index);
+                                        if ($safeIndex === '') {
+                                            $safeIndex = 'item';
+                                        }
+                                        $itemId = $categoryId . '-' . $safeIndex;
                                         $itemName = (string)($item['name'] ?? '');
                                         $itemDesc = (string)($item['description'] ?? $itemName);
                                     ?>
