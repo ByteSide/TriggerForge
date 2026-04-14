@@ -26,8 +26,8 @@ No build step, no database, no npm dependencies. Upload the files, protect the d
 - **Confirmation modal** before every trigger to prevent accidental fires
 - **Cooldown timer** (10 s) to prevent double-triggers, with live progress indicator
 - **Toast notifications** for success, error, warning and info feedback
-- **Server-side proxy** — browsers never see your webhook URLs without authentication
-- **URL whitelist** — the backend only forwards to pre-configured targets
+- **Basic-Auth gate** — unauthenticated visitors never reach the HTML or the webhook URLs embedded in it
+- **Server-side proxy + URL whitelist** — the frontend posts a target URL to `api/trigger.php`, which only forwards it if it matches an entry in `config/config.php` (403 otherwise)
 - **Self-hosted fonts and icons** — no CDN dependencies, no analytics, no tracking
 - **Reduced-motion support** — particle effects auto-disable for accessibility
 
@@ -160,8 +160,9 @@ TriggerForge takes a defence-in-depth approach for a simple tool:
 
 - **HTTP Basic Auth** via `.htaccess` guards every request before PHP even runs
 - **Forced HTTPS** via a 301 redirect at the Apache layer
-- **Server-side proxy** — the browser sends a URL reference to `api/trigger.php`, which validates it against the config before firing via cURL
+- **Server-side proxy** — the browser POSTs the chosen webhook URL to `api/trigger.php`, which re-validates it against `config/config.php` before firing via cURL (the browser never talks to the target directly)
 - **URL whitelist** — only URLs listed in `config/config.php` can ever be triggered; any other URL is rejected with HTTP 403
+- **JSON-only API** — `api/trigger.php` requires `Content-Type: application/json`, which browsers cannot set on a cross-site simple form submission, blocking CSRF-via-text/plain
 - **Config file protection** — direct HTTP access to `config/config.php` is blocked
 - **Security headers** — `Content-Security-Policy`, `Referrer-Policy`, `Permissions-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, and `X-XSS-Protection` are set by default
 - **PWA asset exception** — only `.webmanifest`, `.png`, `.svg`, `.ico` files bypass auth so that mobile "Add to Home Screen" flows work
