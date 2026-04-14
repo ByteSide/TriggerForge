@@ -95,16 +95,18 @@ if (!in_array($webhookUrl, $validUrls, true)) {
 $ch = curl_init($webhookUrl);
 
 // Restrict to HTTP(S) only — blocks SSRF via file://, gopher://, ldap://, etc.
-// on redirects. Uses CURLPROTO_* constants when available, falls back to bitmask.
+// Uses CURLPROTO_* constants when available, falls back to bitmask.
 $allowedProtocols = (defined('CURLPROTO_HTTP') ? CURLPROTO_HTTP : 1)
     | (defined('CURLPROTO_HTTPS') ? CURLPROTO_HTTPS : 2);
 
 curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_FOLLOWLOCATION => true,
-    CURLOPT_MAXREDIRS => 3,
+    // Don't follow redirects. A compromised or misconfigured webhook
+    // target could otherwise redirect the POST to internal metadata
+    // endpoints (e.g. 169.254.169.254 on AWS) — classic SSRF. Legitimate
+    // webhooks don't need HTTP redirects; if one does, update config.
+    CURLOPT_FOLLOWLOCATION => false,
     CURLOPT_PROTOCOLS => $allowedProtocols,
-    CURLOPT_REDIR_PROTOCOLS => $allowedProtocols,
     CURLOPT_CONNECTTIMEOUT => 10,
     CURLOPT_TIMEOUT => 30,
     CURLOPT_POST => true,
