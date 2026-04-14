@@ -225,7 +225,7 @@ function renderFavorites() {
             
             const name = button.getAttribute('data-webhook-name');
             const category = button.getAttribute('data-category');
-            const favoriteBtn = createFavoriteButton(itemId, name, index + 1, type, url = null, faviconSrc = null, category);
+            const favoriteBtn = createFavoriteButton(itemId, name, index + 1, type, null, null, category);
             favoritesScroll.appendChild(favoriteBtn);
         } else if (type === 'link') {
             const button = document.querySelector(`.custom-link-btn[data-link-id="${itemId}"]`);
@@ -245,19 +245,29 @@ function renderFavorites() {
 
 function createFavoriteButton(itemId, name, position, type, url = null, faviconSrc = null, category = null) {
     const btn = document.createElement('button');
-    
+
+    const buildLabel = (labelText, badgeText) => {
+        const span = document.createElement('span');
+        if (badgeText) {
+            const badge = document.createElement('span');
+            badge.className = 'favorite-btn-inline-badge';
+            badge.textContent = badgeText;
+            span.appendChild(badge);
+        }
+        span.appendChild(document.createTextNode(labelText));
+        return span;
+    };
+
     if (type === 'webhook') {
         btn.className = 'favorite-btn';
         btn.setAttribute('data-webhook-id', itemId);
         btn.setAttribute('data-type', 'webhook');
-        
-        const categoryBadge = category ? `<span class="favorite-btn-inline-badge">${category}</span>` : '';
-        
-        btn.innerHTML = `
-            <i class='bx bx-bolt favorite-btn-icon'></i>
-            <span>${categoryBadge}${name}</span>
-        `;
-        
+
+        const icon = document.createElement('i');
+        icon.className = 'bx bx-bolt favorite-btn-icon';
+        btn.appendChild(icon);
+        btn.appendChild(buildLabel(name, category));
+
         btn.addEventListener('click', () => {
             const originalBtn = document.querySelector(`.trigger-btn[data-webhook-id="${itemId}"]`);
             if (originalBtn) {
@@ -270,28 +280,38 @@ function createFavoriteButton(itemId, name, position, type, url = null, faviconS
         btn.setAttribute('data-link-id', itemId);
         btn.setAttribute('data-type', 'link');
         btn.setAttribute('data-link-url', url);
-        
-        const faviconHTML = faviconSrc 
-            ? `<img src="${faviconSrc}" alt="Icon" class="favorite-link-btn-favicon" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">`
-            : '';
-        const fallbackIconHTML = faviconSrc 
-            ? `<i class='bx bx-link-external favorite-link-btn-icon' style="display:none;"></i>`
-            : `<i class='bx bx-link-external favorite-link-btn-icon'></i>`;
-        
-        const categoryBadge = category ? `<span class="favorite-btn-inline-badge">${category}</span>` : '';
-        
-        btn.innerHTML = `
-            ${faviconHTML}
-            ${fallbackIconHTML}
-            <span>${categoryBadge}${name}</span>
-        `;
-        
+
+        if (faviconSrc) {
+            const img = document.createElement('img');
+            img.src = faviconSrc;
+            img.alt = '';
+            img.className = 'favorite-link-btn-favicon';
+            img.onerror = function () {
+                this.style.display = 'none';
+                if (this.nextElementSibling) {
+                    this.nextElementSibling.style.display = 'inline-block';
+                }
+            };
+            btn.appendChild(img);
+
+            const fallback = document.createElement('i');
+            fallback.className = 'bx bx-link-external favorite-link-btn-icon';
+            fallback.style.display = 'none';
+            btn.appendChild(fallback);
+        } else {
+            const icon = document.createElement('i');
+            icon.className = 'bx bx-link-external favorite-link-btn-icon';
+            btn.appendChild(icon);
+        }
+
+        btn.appendChild(buildLabel(name, category));
+
         btn.addEventListener('click', () => {
             window.open(url, '_blank', 'noopener,noreferrer');
             showToast(`🔗 ${name} opened`, 'info');
         });
     }
-    
+
     return btn;
 }
 
@@ -556,32 +576,46 @@ function restoreCooldowns() {
 // === Toast Notifications ===
 function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
-    
+    if (!container) return;
+
     const icons = {
         success: 'bx-check-circle',
         error: 'bx-error-circle',
         warning: 'bx-error',
         info: 'bx-info-circle'
     };
-    
-    toast.innerHTML = `
-        <i class='bx ${icons[type]} toast-icon'></i>
-        <div class="toast-content">
-            <div class="toast-message">${message}</div>
-        </div>
-        <button class="toast-close"><i class='bx bx-x'></i></button>
-    `;
-    
+    const iconClass = icons[type] || icons.info;
+
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+
+    const iconEl = document.createElement('i');
+    iconEl.className = `bx ${iconClass} toast-icon`;
+
+    const content = document.createElement('div');
+    content.className = 'toast-content';
+    const msgEl = document.createElement('div');
+    msgEl.className = 'toast-message';
+    msgEl.textContent = message;
+    content.appendChild(msgEl);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'toast-close';
+    closeBtn.type = 'button';
+    const closeIcon = document.createElement('i');
+    closeIcon.className = 'bx bx-x';
+    closeBtn.appendChild(closeIcon);
+
+    toast.appendChild(iconEl);
+    toast.appendChild(content);
+    toast.appendChild(closeBtn);
+
     container.appendChild(toast);
-    
-    // Close button
-    const closeBtn = toast.querySelector('.toast-close');
+
     closeBtn.addEventListener('click', () => {
         closeToast(toast);
     });
-    
+
     // Auto-dismiss after TOAST_DURATION
     setTimeout(() => {
         closeToast(toast);

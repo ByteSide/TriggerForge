@@ -4,8 +4,12 @@
  * Main Interface with Favorites, Shortcuts & Premium Features
  */
 
-// Load config
-$config = require __DIR__ . '/config/config.php';
+// Load config (graceful fallback if file missing or malformed)
+$configPath = __DIR__ . '/config/config.php';
+$config = file_exists($configPath) ? @require $configPath : [];
+if (!is_array($config)) {
+    $config = [];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -135,25 +139,31 @@ $config = require __DIR__ . '/config/config.php';
                                     <?php elseif ($type === 'link'): ?>
                                         <!-- Custom Link Button -->
                                         <?php
-                                            // Generate favicon URL
-                                            $domain = parse_url($item['url'], PHP_URL_HOST);
-                                            $faviconUrl = "https://www.google.com/s2/favicons?domain=" . urlencode($domain) . "&sz=32";
+                                            // Generate favicon URL (guard against malformed URLs / missing host)
+                                            $domain = !empty($item['url']) ? parse_url($item['url'], PHP_URL_HOST) : null;
+                                            $faviconUrl = $domain
+                                                ? 'https://www.google.com/s2/favicons?domain=' . urlencode($domain) . '&sz=32'
+                                                : '';
                                         ?>
-                                        <button 
+                                        <button
                                             class="custom-link-btn"
                                             data-type="link"
                                             data-link-id="<?php echo htmlspecialchars($itemId); ?>"
-                                            data-link-url="<?php echo htmlspecialchars($item['url']); ?>"
+                                            data-link-url="<?php echo htmlspecialchars($item['url'] ?? ''); ?>"
                                             data-link-name="<?php echo htmlspecialchars($item['name']); ?>"
                                             data-category="<?php echo htmlspecialchars($categoryName); ?>"
                                             title="<?php echo htmlspecialchars($item['description'] ?? $item['name']); ?>"
                                             aria-label="<?php echo htmlspecialchars($item['name']); ?>"
                                         >
-                                            <img src="<?php echo htmlspecialchars($faviconUrl); ?>" 
-                                                 alt="Icon" 
-                                                 class="link-btn-favicon"
-                                                 onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
-                                            <i class='bx bx-link-external link-btn-icon-fallback' style="display:none;"></i>
+                                            <?php if ($faviconUrl !== ''): ?>
+                                                <img src="<?php echo htmlspecialchars($faviconUrl); ?>"
+                                                     alt=""
+                                                     class="link-btn-favicon"
+                                                     onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+                                                <i class='bx bx-link-external link-btn-icon-fallback' style="display:none;"></i>
+                                            <?php else: ?>
+                                                <i class='bx bx-link-external link-btn-icon-fallback'></i>
+                                            <?php endif; ?>
                                             <span class="link-btn-text"><?php echo htmlspecialchars($item['name']); ?></span>
                                             <i class='bx bx-external-link link-btn-indicator'></i>
                                             <i class='bx bx-star link-btn-favorite' data-link-id="<?php echo htmlspecialchars($itemId); ?>" title="Add to favorites"></i>
