@@ -172,7 +172,8 @@
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseleave', handleMouseLeave);
         window.addEventListener('touchmove', handleTouchMove, { passive: true });
-        window.addEventListener('touchend', handleMouseLeave);
+        window.addEventListener('touchend', handleTouchEnd);
+        window.addEventListener('touchcancel', handleTouchEnd);
 
         initialized = true;
 
@@ -227,11 +228,22 @@
     }
 
     /**
-     * Handle mouse/touch leave
+     * Handle mouse leave
      */
     function handleMouseLeave() {
         mouse.x = null;
         mouse.y = null;
+    }
+
+    /**
+     * Handle touch end — only clear mouse when *all* fingers are lifted.
+     * Multi-touch otherwise loses interaction until the next touchmove.
+     */
+    function handleTouchEnd(e) {
+        if (!e.touches || e.touches.length === 0) {
+            mouse.x = null;
+            mouse.y = null;
+        }
     }
 
     /**
@@ -281,7 +293,8 @@
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseleave', handleMouseLeave);
         window.removeEventListener('touchmove', handleTouchMove);
-        window.removeEventListener('touchend', handleMouseLeave);
+        window.removeEventListener('touchend', handleTouchEnd);
+        window.removeEventListener('touchcancel', handleTouchEnd);
         particles = [];
         initialized = false;
     }
