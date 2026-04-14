@@ -79,8 +79,10 @@ foreach ($config as $category => $webhooks) {
     }
 }
 
-// Validation: Is the URL in the whitelist?
-if (!in_array($webhookUrl, $validUrls)) {
+// Validation: Is the URL in the whitelist? Strict comparison avoids any
+// PHP type-juggling surprises — both sides are already strings, but the
+// whitelist check is security-critical so defense in depth is cheap.
+if (!in_array($webhookUrl, $validUrls, true)) {
     http_response_code(403);
     echo json_encode([
         'success' => false,
