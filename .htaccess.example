@@ -36,8 +36,10 @@ AuthName "TriggerForge - Restricted Area"
 AuthUserFile /path/to/your/triggerforge/.htpasswd
 Require valid-user
 
-# Protect config, docs, and sensitive files from direct access
-<FilesMatch "(^\.|config\.php$|\.htpasswd$|composer\.(json|lock)$|package(-lock)?\.json$|\.md$)">
+# Protect config, docs, and sensitive files from direct access.
+# Also blocks common editor/backup leftovers (~, .bak, .swp, .orig) so a
+# forgotten config.php.bak can't be fetched over HTTP.
+<FilesMatch "(^\.|config\.php$|\.htpasswd$|composer\.(json|lock)$|package(-lock)?\.json$|\.md$|~$|\.(bak|swp|swo|orig|old|tmp)$)">
     # Apache 2.4+
     <IfModule mod_authz_core.c>
         Require all denied
