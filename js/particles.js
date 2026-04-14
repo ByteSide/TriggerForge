@@ -95,22 +95,27 @@
                 const dx = this.baseX - mouse.x;
                 const dy = this.baseY - mouse.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
-                
+
                 if (distance < CONFIG.mouseRadius) {
                     // Calculate push force (stronger when closer)
                     const force = (CONFIG.mouseRadius - distance) / CONFIG.mouseRadius;
                     const angle = Math.atan2(dy, dx);
-                    
+
                     // Push particle away from mouse
                     this.dx += Math.cos(angle) * force * CONFIG.mouseForce * 2;
                     this.dy += Math.sin(angle) * force * CONFIG.mouseForce * 2;
-                    
+
                     // Increase opacity when near mouse (glow effect)
                     this.opacity = Math.min(1, this.baseOpacity + force * 0.5);
                 } else {
                     // Return opacity to normal
                     this.opacity += (this.baseOpacity - this.opacity) * 0.05;
                 }
+            } else {
+                // Mouse is outside the viewport — still ease opacity back
+                // to base, otherwise particles lit up by a prior hover stay
+                // permanently boosted until the cursor returns.
+                this.opacity += (this.baseOpacity - this.opacity) * 0.05;
             }
 
             // Apply displacement and gradually return
