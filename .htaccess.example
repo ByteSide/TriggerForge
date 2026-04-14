@@ -83,6 +83,8 @@ RedirectMatch 404 (^|/)\.(git|svn|hg|bzr|DS_Store)(/|$)
     Header set Referrer-Policy "strict-origin-when-cross-origin"
     Header set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(), usb=()"
     # CSP: self + required CDN/Google favicon. Adjust if you add external assets.
-    Header set Content-Security-Policy "default-src 'self'; img-src 'self' data: https://www.google.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+    # object-src 'none' and frame-src 'none' explicitly block plugin and iframe
+    # embedding regardless of default-src, per OWASP hardening guidance.
+    Header set Content-Security-Policy "default-src 'self'; img-src 'self' data: https://www.google.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; object-src 'none'; frame-src 'none'"
 </IfModule>
 
