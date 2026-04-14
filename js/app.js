@@ -629,8 +629,11 @@ function handleSuccess(button, webhookName) {
     // Show toast
     showToast(`✓ ${webhookName} triggered successfully!`, 'success');
 
-    // Reset after 1 second
+    // Reset after 1 second. Gate on the class so we don't stomp on the
+    // icon if the user triggered another request in the meantime (which
+    // would have moved the button out of the `success` state already).
     setTimeout(() => {
+        if (!button.classList.contains('success')) return;
         button.classList.remove('success');
         if (icon) icon.className = originalIconClass;
     }, 1000);
@@ -648,8 +651,10 @@ function handleError(button, message) {
     // Show toast
     showToast(`✗ Error: ${message}`, 'error');
 
-    // Reset after 1 second
+    // Reset after 1 second. Same rationale as handleSuccess: bail out if
+    // the button has already moved on to another state.
     setTimeout(() => {
+        if (!button.classList.contains('error')) return;
         button.classList.remove('error');
         if (icon) icon.className = originalIconClass;
     }, 1000);
