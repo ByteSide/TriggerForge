@@ -25,13 +25,13 @@ if (!is_array($config)) {
     <link rel="stylesheet" href="css/bg.css">
     <link rel="stylesheet" href="css/style.css">
     
-    <!-- Favicons -->
-    <link rel="icon" type="image/png" href="/assets/favicons/favicon-96x96.png" sizes="96x96" />
-    <link rel="icon" type="image/svg+xml" href="/assets/favicons/favicon.svg" />
-    <link rel="shortcut icon" href="/assets/favicons/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/assets/favicons/apple-touch-icon.png" />
+    <!-- Favicons (relative so deployments under a subdirectory still resolve) -->
+    <link rel="icon" type="image/png" href="assets/favicons/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="assets/favicons/favicon.svg" />
+    <link rel="shortcut icon" href="assets/favicons/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/favicons/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-title" content="TriggerForge" />
-    <link rel="manifest" href="/assets/favicons/site.webmanifest" />
+    <link rel="manifest" href="assets/favicons/site.webmanifest" />
     
     <!-- Mobile Web App Settings -->
     <meta name="mobile-web-app-capable" content="yes">
