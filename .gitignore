@@ -4,13 +4,27 @@
 config/config.php
 .htaccess
 .htpasswd
+.env
+.env.*
 
 # Local tools (not needed in repo)
 favicon-generator/
 
+# Internal documentation (not published)
+/PROJECT.md
+
+# Dependencies (in case they ever get introduced)
+node_modules/
+vendor/
+
 # Logs
 logs/
 *.log
+
+# Backup / leftover files
+*_OLD
+*.bak
+*.orig
 
 # OS generated files
 .DS_Store
