@@ -774,21 +774,22 @@ function showConfirmationModal(webhookName, callback) {
     
     // Set webhook name
     webhookNameElement.textContent = webhookName;
-    
+
     // Remove old event listeners by cloning the button
     const newBtnConfirm = btnConfirm.cloneNode(true);
     btnConfirm.parentNode.replaceChild(newBtnConfirm, btnConfirm);
-    
-    // Add new event listener
+
+    // Add new event listener — { once: true } prevents rapid double-click from
+    // firing the callback twice during the modal's close transition.
     newBtnConfirm.addEventListener('click', () => {
         hideConfirmationModal();
         if (callback) callback();
-    });
-    
+    }, { once: true });
+
     // Show modal with animation
     backdrop.classList.add('active');
     modal.classList.add('active');
-    
+
     // Focus on confirm button for accessibility
     setTimeout(() => {
         newBtnConfirm.focus();

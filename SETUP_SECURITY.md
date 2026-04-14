@@ -2,40 +2,27 @@
 
 ## Create .htpasswd File
 
-The `.htpasswd` file contains the encrypted username and password for HTTP Basic Auth protection.
+The `.htpasswd` file contains the hashed username and password for HTTP Basic Auth protection. **Generate it locally** — never submit passwords to a third-party website.
 
-### Option 1: Online Generator (Easiest Method)
-
-1. Visit: https://www.web2generators.com/apache-tools/htpasswd-generator
-2. Enter your desired username (e.g. `admin`)
-3. Enter your desired password
-4. Click "Generate"
-5. Copy the generated line (looks like: `admin:$apr1$xyz...`)
-6. Create a new file `.htpasswd` and paste this line
-7. Upload the file via FTP to the `/triggerforge/` directory
-
-### Option 2: With Local Apache (if available)
+### Option 1: `htpasswd` CLI (recommended)
 
 ```bash
-htpasswd -c .htpasswd admin
+htpasswd -B -c .htpasswd admin
 ```
 
-The program will ask for a password. The file is created automatically.
+`-B` selects bcrypt (strongest hash supported by Apache). You will be prompted for a password. Omit `-c` when adding additional users to an existing file.
 
-### Option 3: With PHP Script (temporary on server)
+### Option 2: PHP one-liner (when `htpasswd` is unavailable)
 
-Create a temporary file `generate_htpasswd.php`:
+Run this **locally**, not on the web server:
 
-```php
-<?php
-$username = 'admin';
-$password = 'your-secure-password';
-$hash = password_hash($password, PASSWORD_BCRYPT);
-echo "$username:$hash";
-?>
+```bash
+php -r 'echo "admin:".password_hash("your-secure-password", PASSWORD_BCRYPT)."\n";' > .htpasswd
 ```
 
-Open the script in your browser, copy the output to `.htpasswd` and DELETE the PHP script afterwards!
+Apache 2.4+ accepts bcrypt (`$2y$...`) in `.htpasswd`.
+
+> ⚠️ **Never** upload a PHP password-generation script to a live server. If you forget to delete it, it becomes a credential-harvest endpoint — and unreachable server-side files may still be served for a while after deletion due to caches.
 
 ## Update .htaccess Path
 
@@ -58,15 +45,13 @@ AuthUserFile /var/www/html/triggerforge/.htpasswd
 
 ### How to Find the Absolute Path?
 
-Create a temporary PHP file `pfad.php` with the following content:
+Prefer any of the following, in order, so that nothing sensitive is ever exposed via the web root:
 
-```php
-<?php
-echo __DIR__;
-?>
-```
+1. Look it up in your hosting control panel under "Document Root" or "Home Directory".
+2. SSH into the server and run `pwd` from inside the `triggerforge` directory.
+3. Check your FTP client's path bar — most clients show the absolute path on the server side.
 
-Open it in your browser - the output shows you the absolute path. DELETE the file afterwards!
+Avoid dropping temporary `__DIR__` scripts into the web root; forgetting to delete one leaks server filesystem layout to anyone on the internet.
 
 ## Testing
 
