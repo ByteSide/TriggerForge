@@ -495,7 +495,12 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
         icon.className = 'bx bx-loader-lines trigger-btn-icon';
     }
     
-    // AJAX Request
+    // Abort after 40s so the button can't get stuck in loading state on a
+    // dropped connection. Server-side cURL caps at 30s + 10s connect, so a
+    // real response always arrives well before this.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 40000);
+
     fetch('api/trigger.php', {
         method: 'POST',
         headers: {
@@ -503,10 +508,12 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
         },
         body: JSON.stringify({
             webhook_url: webhookUrl
-        })
+        }),
+        signal: controller.signal
     })
     .then(response => response.json())
     .then(data => {
+        clearTimeout(timeoutId);
         // Remove loading state
         button.classList.remove('loading');
         if (icon) icon.className = originalIconClass;
@@ -524,10 +531,14 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
         }
     })
     .catch(error => {
+        clearTimeout(timeoutId);
         // Connection error
         button.classList.remove('loading');
         if (icon) icon.className = originalIconClass;
-        handleError(button, 'Connection error: ' + error.message);
+        const msg = error.name === 'AbortError'
+            ? 'Request timed out'
+            : 'Connection error: ' + error.message;
+        handleError(button, msg);
         button.disabled = false;
     });
 }
