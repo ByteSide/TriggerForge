@@ -118,7 +118,7 @@ if (!is_array($config)) {
                         $usedCategoryIds[] = $categoryId;
                     ?>
                     <section class="category-section">
-                        <div class="category-header" data-category-id="<?php echo htmlspecialchars($categoryId); ?>">
+                        <div class="category-header" data-category-id="<?php echo htmlspecialchars($categoryId); ?>" role="button" tabindex="0" aria-expanded="true">
                             <i class='bx bx-folder category-header-icon'></i>
                             <h2 class="category-title"><?php echo htmlspecialchars($categoryNameStr); ?></h2>
                             <i class='bx bx-chevron-down category-icon'></i>

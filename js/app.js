@@ -96,35 +96,43 @@ function saveState() {
 // === Accordion Functionality ===
 function initAccordion() {
     const categoryHeaders = document.querySelectorAll('.category-header');
-    
+
     // Load saved states
     categoryHeaders.forEach(header => {
         const categoryId = header.getAttribute('data-category-id');
         const content = document.querySelector(`.category-content[data-category-id="${categoryId}"]`);
-        
+
         if (!content) return;
-        
+
         // Apply saved state (default: open)
         const isOpen = state.categoryStates.hasOwnProperty(categoryId) ? state.categoryStates[categoryId] : true;
-        
+
         if (!isOpen) {
             content.classList.add('collapsed');
             header.classList.add('collapsed');
         }
-        
-        // Add click handler
+        header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+
+        // Add click + keyboard handlers (role="button" divs need explicit
+        // Enter/Space handling to stay reachable for keyboard users).
         header.addEventListener('click', () => toggleCategory(categoryId));
+        header.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleCategory(categoryId);
+            }
+        });
     });
 }
 
 function toggleCategory(categoryId) {
     const header = document.querySelector(`.category-header[data-category-id="${categoryId}"]`);
     const content = document.querySelector(`.category-content[data-category-id="${categoryId}"]`);
-    
+
     if (!header || !content) return;
-    
+
     const isCollapsed = content.classList.contains('collapsed');
-    
+
     if (isCollapsed) {
         content.classList.remove('collapsed');
         header.classList.remove('collapsed');
@@ -134,7 +142,8 @@ function toggleCategory(categoryId) {
         header.classList.add('collapsed');
         state.categoryStates[categoryId] = false;
     }
-    
+    header.setAttribute('aria-expanded', state.categoryStates[categoryId] ? 'true' : 'false');
+
     saveState();
 }
 
