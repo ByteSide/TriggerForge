@@ -158,6 +158,7 @@
         if (!canvas) return;
 
         ctx = canvas.getContext('2d');
+        if (!ctx) return;
 
         // Set canvas size
         resizeCanvas();

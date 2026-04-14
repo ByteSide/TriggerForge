@@ -51,14 +51,17 @@ git clone https://github.com/ByteSide/TriggerForge.git
 
 ### 2. Create your password file
 
-Generate an `.htpasswd` file with HTTP Basic Auth credentials.
+Generate an `.htpasswd` file with HTTP Basic Auth credentials **locally** — never submit passwords to an online generator.
 
-**Command line:**
 ```bash
-htpasswd -c .htpasswd yourusername
+htpasswd -B -c .htpasswd yourusername
 ```
 
-**Or use an online generator** such as [web2generators.com](https://www.web2generators.com/apache-tools/htpasswd-generator) and save the output as `.htpasswd`.
+`-B` selects bcrypt (Apache 2.4+). If the `htpasswd` CLI is unavailable, fall back to a local PHP one-liner:
+
+```bash
+php -r 'echo "admin:".password_hash("your-secure-password", PASSWORD_BCRYPT)."\n";' > .htpasswd
+```
 
 ### 3. Configure Apache
 
@@ -72,13 +75,7 @@ Open `.htaccess` and update the `AuthUserFile` directive with the **absolute** s
 AuthUserFile /home/username/public_html/triggerforge/.htpasswd
 ```
 
-If you don't know the absolute path, create a temporary helper file at the project root:
-
-```php
-<?php echo __DIR__; ?>
-```
-
-Visit it in your browser, copy the output, then delete the file.
+If you don't know the absolute path, look it up in your hosting control panel ("Document Root" / "Home Directory") or run `pwd` over SSH from inside the project directory. Avoid dropping a temporary `__DIR__` probe into the web root — a forgotten helper file leaks your server filesystem layout.
 
 ### 4. Add your webhooks
 
@@ -166,7 +163,7 @@ TriggerForge takes a defence-in-depth approach for a simple tool:
 - **Server-side proxy** — the browser sends a URL reference to `api/trigger.php`, which validates it against the config before firing via cURL
 - **URL whitelist** — only URLs listed in `config/config.php` can ever be triggered; any other URL is rejected with HTTP 403
 - **Config file protection** — direct HTTP access to `config/config.php` is blocked
-- **Security headers** — `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection` are set by default
+- **Security headers** — `Content-Security-Policy`, `Referrer-Policy`, `Permissions-Policy`, `X-Content-Type-Options`, `X-Frame-Options`, and `X-XSS-Protection` are set by default
 - **PWA asset exception** — only `.webmanifest`, `.png`, `.svg`, `.ico` files bypass auth so that mobile "Add to Home Screen" flows work
 
 ### Recommendations
