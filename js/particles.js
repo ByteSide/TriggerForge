@@ -39,6 +39,7 @@
     let animationId;
     let isReducedMotion = false;
     let debouncedResize = null;
+    let initialized = false;
 
     /**
      * Particle Class
@@ -147,6 +148,8 @@
      * Initialize canvas and particles
      */
     function init() {
+        if (initialized) return;
+
         // Check for reduced motion preference
         isReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (isReducedMotion) return;
@@ -155,13 +158,13 @@
         if (!canvas) return;
 
         ctx = canvas.getContext('2d');
-        
+
         // Set canvas size
         resizeCanvas();
-        
+
         // Create particles
         createParticles();
-        
+
         // Event listeners
         debouncedResize = debounce(handleResize, 250);
         window.addEventListener('resize', debouncedResize);
@@ -169,7 +172,9 @@
         window.addEventListener('mouseleave', handleMouseLeave);
         window.addEventListener('touchmove', handleTouchMove, { passive: true });
         window.addEventListener('touchend', handleMouseLeave);
-        
+
+        initialized = true;
+
         // Start animation
         animate();
     }
@@ -277,6 +282,7 @@
         window.removeEventListener('touchmove', handleTouchMove);
         window.removeEventListener('touchend', handleMouseLeave);
         particles = [];
+        initialized = false;
     }
 
     // Initialize when DOM is ready
