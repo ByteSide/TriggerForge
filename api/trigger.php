@@ -130,8 +130,15 @@ $ch = curl_init($webhookUrl);
 $allowedProtocols = (defined('CURLPROTO_HTTP') ? CURLPROTO_HTTP : 1)
     | (defined('CURLPROTO_HTTPS') ? CURLPROTO_HTTPS : 2);
 
+// Cap how much of the webhook response we'll buffer. We only care about
+// the HTTP status code, not the body — but without a cap a malicious or
+// broken target could return gigabytes and exhaust PHP memory.
+$maxResponseBytes = 65536; // 64 KB
+$bytesReceived = 0;
+
 curl_setopt_array($ch, [
-    CURLOPT_RETURNTRANSFER => true,
+    // No CURLOPT_RETURNTRANSFER: CURLOPT_WRITEFUNCTION drives the body
+    // handling instead, counting bytes and aborting on overflow.
     // Don't follow redirects. A compromised or misconfigured webhook
     // target could otherwise redirect the POST to internal metadata
     // endpoints (e.g. 169.254.169.254 on AWS) — classic SSRF. Legitimate
@@ -148,7 +155,14 @@ curl_setopt_array($ch, [
     CURLOPT_POSTFIELDS => json_encode([
         'triggered_at' => date('Y-m-d H:i:s'),
         'source' => 'TriggerForge'
-    ])
+    ]),
+    CURLOPT_WRITEFUNCTION => function ($ch, $data) use (&$bytesReceived, $maxResponseBytes) {
+        $bytesReceived += strlen($data);
+        if ($bytesReceived > $maxResponseBytes) {
+            return 0; // signal cURL to abort the transfer
+        }
+        return strlen($data);
+    },
 ]);
 
 $response = curl_exec($ch);
