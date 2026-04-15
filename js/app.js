@@ -31,10 +31,19 @@ function isSafeLinkUrl(url) {
 // === Initialization ===
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 TriggerForge Premium Loading...');
-    
+
+    // Mark all decorative Boxicons as aria-hidden so screen readers don't
+    // announce their private-use glyph characters as "unknown symbol".
+    // Buttons containing icons already carry their own aria-label.
+    document.querySelectorAll('i[class^="bx"], i[class*=" bx"]').forEach(icon => {
+        if (!icon.hasAttribute('aria-hidden')) {
+            icon.setAttribute('aria-hidden', 'true');
+        }
+    });
+
     // Load state from LocalStorage
     loadState();
-    
+
     // Initialize all modules
     initAccordion();
     initFavorites();
@@ -43,10 +52,10 @@ document.addEventListener('DOMContentLoaded', function() {
     initModeToggle();
     initConfirmationModal();
     initScrollToTop();
-    
+
     // Restore cooldowns from previous session
     restoreCooldowns();
-    
+
     console.log('✅ TriggerForge Premium Ready!');
 });
 
@@ -336,6 +345,7 @@ function createFavoriteButton(itemId, name, position, type, url = null, faviconS
 
         const icon = document.createElement('i');
         icon.className = 'bx bx-bolt favorite-btn-icon';
+        icon.setAttribute('aria-hidden', 'true');
         btn.appendChild(icon);
         btn.appendChild(buildLabel(name, category));
 
@@ -368,10 +378,12 @@ function createFavoriteButton(itemId, name, position, type, url = null, faviconS
             const fallback = document.createElement('i');
             fallback.className = 'bx bx-link-alt favorite-link-btn-icon';
             fallback.style.display = 'none';
+            fallback.setAttribute('aria-hidden', 'true');
             btn.appendChild(fallback);
         } else {
             const icon = document.createElement('i');
             icon.className = 'bx bx-link-alt favorite-link-btn-icon';
+            icon.setAttribute('aria-hidden', 'true');
             btn.appendChild(icon);
         }
 
@@ -791,6 +803,7 @@ function showToast(message, type = 'info') {
 
     const iconEl = document.createElement('i');
     iconEl.className = `bx ${iconClass} toast-icon`;
+    iconEl.setAttribute('aria-hidden', 'true');
 
     const content = document.createElement('div');
     content.className = 'toast-content';
