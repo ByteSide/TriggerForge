@@ -611,6 +611,9 @@ body {
     align-items: center;
     gap: var(--space-3);
     overflow: hidden;
+    /* Disable double-tap zoom on mobile so a double-tap doesn't zoom the
+       viewport instead of firing the webhook. */
+    touch-action: manipulation;
 }
 
 /* Wave Animation at Bottom */
@@ -775,6 +778,7 @@ body {
     gap: var(--space-2);
     position: relative;
     overflow: hidden;
+    touch-action: manipulation;
 }
 
 .favorite-btn::before {
@@ -1516,6 +1520,7 @@ body.test-mode * {
     align-items: center;
     gap: var(--space-3);
     overflow: hidden;
+    touch-action: manipulation;
 }
 
 .custom-link-btn::before {
