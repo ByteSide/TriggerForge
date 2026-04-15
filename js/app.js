@@ -292,29 +292,33 @@ function renderFavorites() {
     const existingBtns = favoritesScroll.querySelectorAll('.favorite-btn, .favorite-link-btn');
     existingBtns.forEach(btn => btn.remove());
     
-    // Add all favorite buttons fresh
+    // Add all favorite buttons fresh. CSS.escape on selector values keeps
+    // this consistent with the prune filter above — otherwise a legacy
+    // itemId with special characters would pass the prune (which escapes)
+    // but silently fail to render (which wouldn't).
     state.favorites.forEach((favorite, index) => {
         const itemId = favorite.id;
         const type = favorite.type;
-        
+        const escapedId = CSS.escape(itemId);
+
         if (type === 'webhook') {
-            const button = document.querySelector(`.trigger-btn[data-webhook-id="${itemId}"]`);
+            const button = document.querySelector(`.trigger-btn[data-webhook-id="${escapedId}"]`);
             if (!button) return;
-            
+
             const name = button.getAttribute('data-webhook-name');
             const category = button.getAttribute('data-category');
             const favoriteBtn = createFavoriteButton(itemId, name, index + 1, type, null, null, category);
             favoritesScroll.appendChild(favoriteBtn);
         } else if (type === 'link') {
-            const button = document.querySelector(`.custom-link-btn[data-link-id="${itemId}"]`);
+            const button = document.querySelector(`.custom-link-btn[data-link-id="${escapedId}"]`);
             if (!button) return;
-            
+
             const name = button.getAttribute('data-link-name');
             const url = button.getAttribute('data-link-url');
             const category = button.getAttribute('data-category');
             const favicon = button.querySelector('.link-btn-favicon');
             const faviconSrc = favicon ? favicon.src : null;
-            
+
             const favoriteBtn = createFavoriteButton(itemId, name, index + 1, type, url, faviconSrc, category);
             favoritesScroll.appendChild(favoriteBtn);
         }
@@ -350,7 +354,7 @@ function createFavoriteButton(itemId, name, position, type, url = null, faviconS
         btn.appendChild(buildLabel(name, category));
 
         btn.addEventListener('click', () => {
-            const originalBtn = document.querySelector(`.trigger-btn[data-webhook-id="${itemId}"]`);
+            const originalBtn = document.querySelector(`.trigger-btn[data-webhook-id="${CSS.escape(itemId)}"]`);
             if (originalBtn) {
                 // Trigger the webhook (which will show the confirmation modal)
                 triggerWebhook(originalBtn);
