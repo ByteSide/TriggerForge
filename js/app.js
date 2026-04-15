@@ -904,9 +904,11 @@ function showConfirmationModal(webhookName, callback) {
     const btnConfirm = document.getElementById('confirmationModalBtnConfirm');
 
     if (!modal || !backdrop || !webhookNameElement || !btnConfirm) {
+        // If the modal HTML is broken, refuse to fire — the user has no
+        // way to confirm, and firing a webhook silently on click could
+        // trigger production workflows the user didn't intend.
         console.warn('Confirmation modal elements not found');
-        // Fallback: execute callback immediately
-        if (callback) callback();
+        showToast('Confirmation dialog unavailable — cannot fire webhook', 'error');
         return;
     }
 
