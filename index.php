@@ -235,7 +235,7 @@ if (!is_array($config)) {
     
     <!-- Confirmation Modal -->
     <div class="confirmation-modal-backdrop" id="confirmationModalBackdrop"></div>
-    <div class="confirmation-modal" id="confirmationModal" role="dialog" aria-modal="true" aria-labelledby="confirmationModalTitle">
+    <div class="confirmation-modal" id="confirmationModal" role="dialog" aria-modal="true" aria-labelledby="confirmationModalTitle" aria-describedby="confirmationModalText">
         <div class="confirmation-modal-content">
             <div class="confirmation-modal-header">
                 <i class='bx bx-bolt confirmation-modal-icon'></i>
