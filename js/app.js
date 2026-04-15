@@ -589,10 +589,16 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
     // on". Without this, a re-trigger within the 1s window would still see
     // the old class and its setTimeout would stomp on the new loader icon.
     button.classList.remove('error', 'success');
+    const icon = button.querySelector('.trigger-btn-icon');
+    // Reset the icon to the canonical bolt class BEFORE capturing
+    // `originalIconClass`. Otherwise a re-trigger during the 1s after an
+    // error/success would capture the transient bx-alert-circle /
+    // bx-check-circle class and revert the icon to the wrong state once
+    // the new flow completes.
+    if (icon) icon.className = 'bx bx-bolt trigger-btn-icon';
     // Disable button and show loading state
     button.disabled = true;
     button.classList.add('loading');
-    const icon = button.querySelector('.trigger-btn-icon');
     const originalIconClass = icon ? icon.className : '';
     if (icon) {
         icon.className = 'bx bx-loader-lines trigger-btn-icon';
