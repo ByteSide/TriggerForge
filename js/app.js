@@ -1024,24 +1024,30 @@ function hideConfirmationModal() {
 
     modal.classList.remove('active');
     backdrop.classList.remove('active');
-    modal.setAttribute('aria-hidden', 'true');
-    backdrop.setAttribute('aria-hidden', 'true');
-    modal.setAttribute('inert', '');
-    backdrop.setAttribute('inert', '');
 
-    // Re-enable the rest of the page (the focus-trap inert applied on show).
+    // Lift the focus-trap inert from the rest of the page FIRST so the
+    // restore target below is actually focusable again.
     const container = document.querySelector('.container');
     const scrollBtn = document.getElementById('scrollToTopBtn');
     if (container) container.removeAttribute('inert');
     if (scrollBtn) scrollBtn.removeAttribute('inert');
 
-    // Restore body scroll that was locked on show.
-    document.body.style.overflow = '';
-
+    // Restore focus BEFORE marking the modal aria-hidden / inert. ARIA
+    // forbids aria-hidden on an element that contains the currently focused
+    // element, and applying inert to the modal would otherwise blur focus
+    // to <body>, defeating the focus-restoration contract.
     if (confirmationModalReturnFocus && typeof confirmationModalReturnFocus.focus === 'function') {
         try { confirmationModalReturnFocus.focus(); } catch (e) { /* detached node */ }
     }
     confirmationModalReturnFocus = null;
+
+    modal.setAttribute('aria-hidden', 'true');
+    backdrop.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('inert', '');
+    backdrop.setAttribute('inert', '');
+
+    // Restore body scroll that was locked on show.
+    document.body.style.overflow = '';
 }
 
 // === Scroll to Top Button ===
