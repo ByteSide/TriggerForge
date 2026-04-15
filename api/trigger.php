@@ -18,9 +18,11 @@ if (!ini_get('date.timezone')) {
 header('Content-Type: application/json; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
 
-// Only allow POST requests
+// Only allow POST requests. RFC 7231 requires a 405 response to include
+// an Allow header listing the methods that *are* supported.
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
+    header('Allow: POST');
     echo json_encode([
         'success' => false,
         'message' => 'Only POST requests allowed'
