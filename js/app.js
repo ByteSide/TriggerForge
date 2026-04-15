@@ -29,7 +29,7 @@ function isSafeLinkUrl(url) {
 }
 
 // === Initialization ===
-document.addEventListener('DOMContentLoaded', function() {
+function initTriggerForge() {
     console.log('🚀 TriggerForge Premium Loading...');
 
     // Mark decorative Boxicons as aria-hidden so screen readers don't
@@ -63,7 +63,17 @@ document.addEventListener('DOMContentLoaded', function() {
     restoreCooldowns();
 
     console.log('✅ TriggerForge Premium Ready!');
-});
+}
+
+// Run init now if the DOM is already parsed, otherwise wait for it.
+// The naïve `addEventListener('DOMContentLoaded', ...)` never fires when
+// the script is injected into an already-loaded document (bfcache
+// restore, dynamic inserts), which would leave the app uninitialised.
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initTriggerForge);
+} else {
+    initTriggerForge();
+}
 
 // === State Management ===
 function loadStateKey(key, fallback, validator) {
