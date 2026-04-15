@@ -144,10 +144,12 @@ function initAccordion() {
 
         if (!content) return;
 
-        // Apply saved state (default: open). Use Object.hasOwn in case a
-        // corrupted localStorage value shadowed the `hasOwnProperty`
-        // prototype method on the parsed object.
-        const isOpen = Object.hasOwn(state.categoryStates, categoryId)
+        // Apply saved state (default: open). Use Object.hasOwn (with a
+        // polyfill-like fallback for older browsers) in case a corrupted
+        // localStorage value shadowed the `hasOwnProperty` prototype
+        // method on the parsed object.
+        const hasOwn = Object.hasOwn || ((o, k) => Object.prototype.hasOwnProperty.call(o, k));
+        const isOpen = hasOwn(state.categoryStates, categoryId)
             ? state.categoryStates[categoryId]
             : true;
 
