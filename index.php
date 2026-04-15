@@ -251,7 +251,7 @@ if (!is_array($config)) {
             <div class="footer-bottom">
                 <p class="footer-copyright">
                     &copy; <?php echo date('Y'); ?> · Made with <i class='bx bxs-heart' style="color: #FD7D00;"></i> by 
-                    <a href="https://byteside.io" target="_blank" rel="noopener noreferrer" class="footer-byteside-link">
+                    <a href="https://byteside.io" target="_blank" rel="noopener noreferrer" class="footer-byteside-link" aria-label="ByteSide.io (opens in a new tab)">
                         <span class="byteside-logo">Byte<span class="byteside-logo__side">Side</span><span class="byteside-logo__dot">.</span><span class="byteside-logo__io">io</span></span>
                     </a>
                 </p>
