@@ -700,12 +700,17 @@ function startCooldown(webhookId, button) {
     const endTime = Date.now() + COOLDOWN_DURATION;
     state.cooldowns[webhookId] = endTime;
     saveState();
-    
+
     button.classList.add('cooldown');
     const cooldownBar = button.querySelector('.trigger-btn-cooldown');
     const textSpan = button.querySelector('.trigger-btn-text');
+    // Defensive: if the button markup ever loses one of these child
+    // elements we still want the cooldown state to persist correctly,
+    // even if the visual bar can't render. Skip display update rather
+    // than throwing a TypeError on textSpan.textContent.
+    if (!cooldownBar || !textSpan) return;
     const originalText = textSpan.textContent;
-    
+
     updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, originalText);
 }
 
