@@ -25,6 +25,7 @@ if (!is_array($config)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <meta name="description" content="TriggerForge - Webhook Trigger Interface">
     <meta name="theme-color" content="#06171E">
+    <meta name="color-scheme" content="dark">
     <title>TriggerForge</title>
     
     <!-- CSS -->
