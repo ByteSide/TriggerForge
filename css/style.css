@@ -1286,6 +1286,13 @@ body.test-mode * {
     white-space: nowrap;
 }
 
+/* Forward keyboard focus from the hidden checkbox to the visible switch,
+   otherwise Tab-focus would "land nowhere" for keyboard users. */
+.mode-toggle-input:focus-visible ~ .mode-toggle-switch {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
 .mode-toggle-switch {
     display: flex;
     align-items: center;
