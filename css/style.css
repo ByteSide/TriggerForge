@@ -2212,5 +2212,15 @@ body.test-mode .confirmation-modal {
     #particle-canvas {
         display: none;
     }
+    /* Flatten all animations and transitions to effectively-instant so
+       users who opted out of motion don't get the pulseGlow / shake /
+       waveBottom / bannerPulse / heartbeat loops. `0.01ms` (not 0s) is
+       the standard trick so one-shot `animationend` listeners still fire. */
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
