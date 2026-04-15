@@ -2169,10 +2169,13 @@ body.test-mode .category-icon {
 
 @media (hover: hover) {
     body.test-mode .category-header:hover .category-icon {
-        background: rgba(1, 83, 81, 0.3);
-        border-color: rgba(1, 83, 81, 0.5);
+        /* Keep the orange theme — previously this was copy-pasted from
+           the teal normal-mode rule and caused a jarring color jump on
+           hover in test mode. */
+        background: rgba(255, 152, 0, 0.3);
+        border-color: rgba(255, 152, 0, 0.5);
     }
-    
+
     body.test-mode .category-header.collapsed:hover .category-icon {
         background: rgba(255, 152, 0, 0.3);
         border-color: rgba(255, 152, 0, 0.6);
