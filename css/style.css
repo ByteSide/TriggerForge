@@ -342,6 +342,9 @@ body {
     align-items: baseline;
     text-decoration: none;
     transition: all var(--transition-fast);
+    /* Reset the browser's default h1 margin — the header container
+       already supplies its own padding. */
+    margin: 0;
 }
 
 .logo__forge {

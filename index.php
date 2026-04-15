@@ -58,7 +58,7 @@ if (!is_array($config)) {
     <div class="container">
         <!-- Header with Typography Logo -->
         <header class="header">
-            <span class="logo">Trigger<span class="logo__forge">Forge</span></span>
+            <h1 class="logo">Trigger<span class="logo__forge">Forge</span></h1>
             
             <!-- TEST/PROD Toggle -->
             <div class="mode-toggle-container">
