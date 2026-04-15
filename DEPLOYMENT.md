@@ -6,24 +6,24 @@ Step-by-step guide for deploying to your web hosting provider.
 
 ### 1. Create .htpasswd
 
-Generate your `.htpasswd` file **locally** — never send passwords to an online service:
+Generate your `.htpasswd` file **locally** — never send passwords to an online service. The `-B` flag selects bcrypt (the strongest hash Apache supports); without it, htpasswd defaults to the much weaker APR1/MD5.
 
 **Linux / macOS:**
 ```bash
-htpasswd -c .htpasswd admin
+htpasswd -B -c .htpasswd admin
 ```
 
 **Windows (PowerShell, if Apache tools are installed):**
 ```powershell
-C:\xampp\apache\bin\htpasswd.exe -c .htpasswd admin
+C:\xampp\apache\bin\htpasswd.exe -B -c .htpasswd admin
 ```
 
-**Fallback (bcrypt via openssl + PHP one-liner):**
+**Fallback (bcrypt via PHP one-liner):**
 ```bash
 php -r 'echo "admin:".password_hash("your-password", PASSWORD_BCRYPT)."\n";' > .htpasswd
 ```
 
-You'll be prompted for a password — pick a strong one. The resulting file will contain a single line like `admin:$apr1$...`.
+You'll be prompted for a password — pick a strong one. With `-B` the resulting file will contain a single line like `admin:$2y$05$...`.
 
 **Important:** Store the username and password in a password manager — you'll need them to log in.
 
