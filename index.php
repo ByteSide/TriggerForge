@@ -188,7 +188,7 @@ if (!is_array($config)) {
                                             title="<?php echo htmlspecialchars($itemDesc); ?>"
                                             aria-label="<?php echo htmlspecialchars($itemName); ?>"
                                         >
-                                            <div class="trigger-btn-cooldown"></div>
+                                            <span class="trigger-btn-cooldown" aria-hidden="true"></span>
                                             <i class='bx bx-bolt trigger-btn-icon'></i>
                                             <span class="trigger-btn-text"><?php echo htmlspecialchars($itemName); ?></span>
                                             <i class='bx bx-star trigger-btn-favorite' data-webhook-id="<?php echo htmlspecialchars($itemId); ?>" title="Add to favorites"></i>
