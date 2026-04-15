@@ -1,6 +1,7 @@
 {
   "name": "triggerforge",
   "version": "1.0.0",
+  "private": true,
   "description": "Webhook Trigger Interface - Trigger any webhook with a single click",
   "scripts": {
     "start": "php -S localhost:8000",
