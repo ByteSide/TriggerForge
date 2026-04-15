@@ -6,6 +6,14 @@
  * triggers the configured webhooks server-side.
  */
 
+// Ensure a default timezone before any date() call. On shared hosts
+// without date.timezone in php.ini, PHP emits an E_WARNING for every
+// date() invocation that gets written to the error log on each webhook
+// fire. UTC is a safe, stable choice for a trigger timestamp.
+if (!ini_get('date.timezone')) {
+    date_default_timezone_set('UTC');
+}
+
 // JSON Response Header
 header('Content-Type: application/json; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
