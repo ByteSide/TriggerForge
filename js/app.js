@@ -377,15 +377,18 @@ function createFavoriteButton(itemId, name, position, type, url = null, faviconS
 
         if (faviconSrc) {
             const img = document.createElement('img');
-            img.src = faviconSrc;
             img.alt = '';
             img.className = 'favorite-link-btn-favicon';
+            // Attach onerror BEFORE setting src — a cached 404 can fire
+            // the error synchronously from the src assignment and would
+            // otherwise run before the handler is wired up.
             img.onerror = function () {
                 this.style.display = 'none';
                 if (this.nextElementSibling) {
                     this.nextElementSibling.style.display = 'inline-block';
                 }
             };
+            img.src = faviconSrc;
             btn.appendChild(img);
 
             const fallback = document.createElement('i');
