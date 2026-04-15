@@ -32,10 +32,16 @@ function isSafeLinkUrl(url) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 TriggerForge Premium Loading...');
 
-    // Mark all decorative Boxicons as aria-hidden so screen readers don't
+    // Mark decorative Boxicons as aria-hidden so screen readers don't
     // announce their private-use glyph characters as "unknown symbol".
-    // Buttons containing icons already carry their own aria-label.
+    // Buttons containing icons already carry their own aria-label. Skip
+    // the favorite stars — they're interactive (click handlers) and need
+    // to stay announceable via their title attribute.
     document.querySelectorAll('i[class^="bx"], i[class*=" bx"]').forEach(icon => {
+        if (icon.classList.contains('trigger-btn-favorite') ||
+            icon.classList.contains('link-btn-favorite')) {
+            return;
+        }
         if (!icon.hasAttribute('aria-hidden')) {
             icon.setAttribute('aria-hidden', 'true');
         }
