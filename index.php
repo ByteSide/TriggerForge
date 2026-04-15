@@ -47,6 +47,11 @@ if (!is_array($config)) {
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
+    <noscript>
+        <div style="position:fixed;top:0;left:0;right:0;padding:16px;background:#ef4444;color:#fff;font-family:monospace;text-align:center;z-index:99999;">
+            TriggerForge requires JavaScript. Please enable it to fire webhooks.
+        </div>
+    </noscript>
     <!-- Particle Canvas Background -->
     <canvas id="particle-canvas" aria-hidden="true"></canvas>
     
