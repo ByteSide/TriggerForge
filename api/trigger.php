@@ -139,6 +139,14 @@ if (!in_array($webhookUrl, $validUrls, true)) {
 
 // Send cURL request to webhook
 $ch = curl_init($webhookUrl);
+if ($ch === false) {
+    http_response_code(500);
+    echo json_encode([
+        'success' => false,
+        'message' => 'Failed to initialize cURL'
+    ]);
+    exit;
+}
 
 // Restrict to HTTP(S) only — blocks SSRF via file://, gopher://, ldap://, etc.
 // Uses CURLPROTO_* constants when available, falls back to bitmask.
