@@ -144,8 +144,12 @@ function initAccordion() {
 
         if (!content) return;
 
-        // Apply saved state (default: open)
-        const isOpen = state.categoryStates.hasOwnProperty(categoryId) ? state.categoryStates[categoryId] : true;
+        // Apply saved state (default: open). Use Object.hasOwn in case a
+        // corrupted localStorage value shadowed the `hasOwnProperty`
+        // prototype method on the parsed object.
+        const isOpen = Object.hasOwn(state.categoryStates, categoryId)
+            ? state.categoryStates[categoryId]
+            : true;
 
         if (!isOpen) {
             content.classList.add('collapsed');
