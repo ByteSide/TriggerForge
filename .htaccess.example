@@ -64,7 +64,9 @@ SetEnvIf Request_URI "^/\.well-known/acme-challenge/" allow_acme
 # Protect config, docs, and sensitive files from direct access.
 # Also blocks common editor/backup leftovers (~, .bak, .swp, .orig) so a
 # forgotten config.php.bak can't be fetched over HTTP.
-<FilesMatch "(^\.|config\.php$|\.htpasswd$|composer\.(json|lock)$|package(-lock)?\.json$|\.md$|~$|\.(bak|swp|swo|orig|old|tmp)$)">
+# (?i) makes the match case-insensitive — a config.php.BAK uploaded from
+# a case-insensitive OS would otherwise slip through on Linux.
+<FilesMatch "(?i)(^\.|config\.php$|\.htpasswd$|composer\.(json|lock)$|package(-lock)?\.json$|\.md$|~$|\.(bak|swp|swo|orig|old|tmp)$)">
     # Apache 2.4+
     <IfModule mod_authz_core.c>
         Require all denied
