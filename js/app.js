@@ -859,6 +859,10 @@ function showToast(message, type = 'info') {
 }
 
 function closeToast(toast) {
+    // Idempotent: the user can click close and the auto-dismiss timer
+    // can also fire on the same toast — without this guard we'd queue
+    // two removals and potentially replay the slide-out animation.
+    if (toast.classList.contains('closing')) return;
     toast.classList.add('closing');
     setTimeout(() => {
         toast.remove();
