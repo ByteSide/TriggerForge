@@ -503,33 +503,21 @@ function initLinkButtons() {
     });
 }
 
-// Open a URL in a new tab, handling mailto:/tel: protocols that don't
-// return a real window handle. Returns true on "looked successful".
+// Open a URL in a new tab via a synthetic <a> click. We use this instead
+// of `window.open(url, '_blank', 'noopener,noreferrer')` because the HTML
+// spec says window.open ALWAYS returns null when the `noopener` feature
+// is present — which would make every successful open look like a popup
+// block. Anchor elements with `rel="noopener noreferrer"` provide the
+// same security guarantees without that false negative.
 function openLinkSafely(url, name) {
-    let protocol = '';
-    try { protocol = new URL(url, window.location.href).protocol; } catch (e) {}
-
-    // mailto:/tel: hand off to the OS handler. window.open returns null
-    // for these in most browsers — so we use a synthetic <a> click instead
-    // and assume success rather than falsely warning "Popup blocked".
-    if (protocol === 'mailto:' || protocol === 'tel:') {
-        const a = document.createElement('a');
-        a.href = url;
-        a.rel = 'noopener noreferrer';
-        a.target = '_blank';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        showToast(`🔗 ${name} opened`, 'info');
-        return;
-    }
-
-    const opened = window.open(url, '_blank', 'noopener,noreferrer');
-    if (opened) {
-        showToast(`🔗 ${name} opened`, 'info');
-    } else {
-        showToast('Popup blocked — allow popups for this site', 'warning');
-    }
+    const a = document.createElement('a');
+    a.href = url;
+    a.rel = 'noopener noreferrer';
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    showToast(`🔗 ${name} opened`, 'info');
 }
 
 function openCustomLink(button) {
