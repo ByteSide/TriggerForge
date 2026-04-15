@@ -43,7 +43,11 @@ AuthUserFile /path/to/your/triggerforge/.htpasswd
 # Let Let's Encrypt / certbot HTTP-01 challenges through Basic Auth. If
 # TriggerForge is deployed at the site root, this is required so automated
 # cert renewal (via .well-known/acme-challenge/) can succeed.
-SetEnvIf Request_URI "\.well-known/acme-challenge/" allow_acme
+#
+# The regex is anchored to the beginning of the request path so that a
+# crafted PATH_INFO like "/api/trigger.php/.well-known/acme-challenge/x"
+# cannot slip through and bypass the auth gate on real script paths.
+SetEnvIf Request_URI "^/\.well-known/acme-challenge/" allow_acme
 <IfModule mod_authz_core.c>
     <RequireAny>
         Require env allow_acme
