@@ -4,6 +4,13 @@
  * Main Interface with Favorites, Shortcuts & Premium Features
  */
 
+// Ensure a default timezone before the footer's date('Y') call. On shared
+// hosts without date.timezone in php.ini, PHP otherwise emits an
+// E_WARNING that can render above the DOCTYPE and break the HTML page.
+if (!ini_get('date.timezone')) {
+    date_default_timezone_set('UTC');
+}
+
 // Load config (graceful fallback if file missing or malformed)
 $configPath = __DIR__ . '/config/config.php';
 $config = file_exists($configPath) ? @require $configPath : [];
