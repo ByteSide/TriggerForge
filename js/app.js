@@ -561,6 +561,11 @@ function triggerWebhook(button) {
 }
 
 function executeWebhook(button, webhookId, webhookUrl, webhookName) {
+    // Clear leftover state from a previous flow so the 1s revert gates in
+    // handleSuccess/handleError can tell "still mine" from "already moved
+    // on". Without this, a re-trigger within the 1s window would still see
+    // the old class and its setTimeout would stomp on the new loader icon.
+    button.classList.remove('error', 'success');
     // Disable button and show loading state
     button.disabled = true;
     button.classList.add('loading');
