@@ -34,7 +34,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // ride the victim's cached Basic Auth to fire any whitelisted webhook —
 // classic CSRF. Browsers cannot set Content-Type to application/json on a
 // simple form submission, so requiring it blocks the attack.
-$contentType = $_SERVER['CONTENT_TYPE'] ?? ($_SERVER['HTTP_CONTENT_TYPE'] ?? '');
+// trim() so that a middleware-inserted leading space in the header
+// doesn't cause `stripos` to return a non-zero position and wrongly
+// reject a legitimate "application/json" payload.
+$contentType = trim($_SERVER['CONTENT_TYPE'] ?? ($_SERVER['HTTP_CONTENT_TYPE'] ?? ''));
 if (stripos($contentType, 'application/json') !== 0) {
     http_response_code(415);
     echo json_encode([
