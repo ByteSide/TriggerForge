@@ -1075,11 +1075,17 @@ function initScrollToTop() {
     // Set initial state in case page is already scrolled (e.g. on reload)
     updateVisibility();
     
-    // Scroll to top when clicked
+    // Scroll to top when clicked. Respect prefers-reduced-motion — JS
+    // scrollTo({behavior:'smooth'}) is NOT covered by the CSS
+    // `scroll-behavior: auto` override in the reduced-motion media query,
+    // so users who opted out of motion would still get a smooth scroll
+    // here unless we branch explicitly.
     scrollToTopBtn.addEventListener('click', () => {
+        const prefersReducedMotion = window.matchMedia &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         window.scrollTo({
             top: 0,
-            behavior: 'smooth'
+            behavior: prefersReducedMotion ? 'auto' : 'smooth'
         });
         
         // Brief haptic feedback via animation
