@@ -913,6 +913,10 @@ function updateModeUI() {
         testModeBanner.classList.add('hidden');
         document.body.classList.remove('test-mode');
     }
+
+    // Reflect the mode in the tab title so users flipping between tabs
+    // can see at a glance that they're in test mode before firing.
+    document.title = state.isTestMode ? 'TriggerForge (TEST)' : 'TriggerForge';
 }
 
 // === Confirmation Modal ===
