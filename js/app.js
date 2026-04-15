@@ -997,6 +997,10 @@ function showConfirmationModal(webhookName, callback) {
     if (container) container.setAttribute('inert', '');
     if (scrollBtn) scrollBtn.setAttribute('inert', '');
 
+    // Lock body scroll so the page behind the modal doesn't drift around
+    // while the user is deciding. Restored in hideConfirmationModal.
+    document.body.style.overflow = 'hidden';
+
     // Focus on confirm button for accessibility. Gate on `.active` so that
     // if the user dismisses the modal within the 100ms transition window
     // (Escape / backdrop click), we don't yank focus away from the
@@ -1026,6 +1030,9 @@ function hideConfirmationModal() {
     const scrollBtn = document.getElementById('scrollToTopBtn');
     if (container) container.removeAttribute('inert');
     if (scrollBtn) scrollBtn.removeAttribute('inert');
+
+    // Restore body scroll that was locked on show.
+    document.body.style.overflow = '';
 
     if (confirmationModalReturnFocus && typeof confirmationModalReturnFocus.focus === 'function') {
         try { confirmationModalReturnFocus.focus(); } catch (e) { /* detached node */ }
