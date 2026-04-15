@@ -485,6 +485,7 @@ body {
     border-left: 3px solid var(--color-primary-dark);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    touch-action: manipulation;
 }
 
 .category-header::before {
