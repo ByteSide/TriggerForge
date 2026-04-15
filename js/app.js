@@ -989,6 +989,14 @@ function showConfirmationModal(webhookName, callback) {
     modal.removeAttribute('inert');
     backdrop.removeAttribute('inert');
 
+    // Trap focus inside the modal by marking the rest of the page inert.
+    // Without this, Tab can move focus to the trigger buttons behind the
+    // modal — breaking the aria-modal="true" contract.
+    const container = document.querySelector('.container');
+    const scrollBtn = document.getElementById('scrollToTopBtn');
+    if (container) container.setAttribute('inert', '');
+    if (scrollBtn) scrollBtn.setAttribute('inert', '');
+
     // Focus on confirm button for accessibility. Gate on `.active` so that
     // if the user dismisses the modal within the 100ms transition window
     // (Escape / backdrop click), we don't yank focus away from the
@@ -1012,6 +1020,12 @@ function hideConfirmationModal() {
     backdrop.setAttribute('aria-hidden', 'true');
     modal.setAttribute('inert', '');
     backdrop.setAttribute('inert', '');
+
+    // Re-enable the rest of the page (the focus-trap inert applied on show).
+    const container = document.querySelector('.container');
+    const scrollBtn = document.getElementById('scrollToTopBtn');
+    if (container) container.removeAttribute('inert');
+    if (scrollBtn) scrollBtn.removeAttribute('inert');
 
     if (confirmationModalReturnFocus && typeof confirmationModalReturnFocus.focus === 'function') {
         try { confirmationModalReturnFocus.focus(); } catch (e) { /* detached node */ }
