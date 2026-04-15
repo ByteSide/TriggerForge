@@ -113,9 +113,13 @@ if (!is_array($config)) {
                         if (!is_array($webhooks)) { continue; }
                         $categoryIdx++;
                         $categoryNameStr = (string)$categoryName;
-                        // Create URL-safe ID from category name (guaranteed unique)
-                        $baseId = strtolower(str_replace(' ', '-', preg_replace('/[^A-Za-z0-9\s-]/', '', $categoryNameStr)));
-                        $baseId = trim(preg_replace('/-+/', '-', $baseId), '-');
+                        // Create URL-safe ID from category name (guaranteed unique).
+                        // Collapse *any* non-[A-Za-z0-9] sequence to a single hyphen —
+                        // the previous variant only replaced plain spaces, so a tab
+                        // or newline in the category name leaked into the ID and
+                        // broke JS CSS selectors like `[data-category-id="foo\tbar"]`.
+                        $baseId = strtolower(preg_replace('/[^A-Za-z0-9]+/', '-', $categoryNameStr));
+                        $baseId = trim($baseId, '-');
                         if ($baseId === '') {
                             $baseId = 'category';
                         }
