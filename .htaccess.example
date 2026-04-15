@@ -1,10 +1,11 @@
 # TriggerForge - Security Configuration
 # HTTP Basic Authentication + HTTPS Redirect
 
-# Disable directory listings. mod_autoindex is enabled on many shared
-# hosts and would otherwise expose js/, css/, assets/ contents when a
-# directory has no index file.
-Options -Indexes
+# Disable directory listings AND content negotiation. -Indexes stops
+# mod_autoindex from exposing js/, css/, assets/ contents. -MultiViews
+# stops Apache from silently serving `/config` → `config.bak` via
+# content negotiation when a file without the requested extension exists.
+Options -Indexes -MultiViews
 
 # Force HTTPS
 <IfModule mod_rewrite.c>
