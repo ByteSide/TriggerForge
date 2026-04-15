@@ -179,9 +179,12 @@
         window.addEventListener('resize', debouncedResize);
         window.addEventListener('mousemove', handleMouseMove);
         window.addEventListener('mouseleave', handleMouseLeave);
+        // All touch listeners are passive — we only read coordinates, never
+        // preventDefault. Non-passive touch listeners block scrolling for up
+        // to 100 ms while the browser waits to see if we'll cancel.
         window.addEventListener('touchmove', handleTouchMove, { passive: true });
-        window.addEventListener('touchend', handleTouchEnd);
-        window.addEventListener('touchcancel', handleTouchEnd);
+        window.addEventListener('touchend', handleTouchEnd, { passive: true });
+        window.addEventListener('touchcancel', handleTouchEnd, { passive: true });
 
         initialized = true;
 
