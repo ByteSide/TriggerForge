@@ -15,6 +15,7 @@ const state = {
 const COOLDOWN_DURATION = 10000; // 10 seconds
 const TOAST_DURATION = 4000; // 4 seconds
 const MAX_FAVORITES = 10;
+const MAX_TOASTS = 5; // cap concurrent toasts to prevent DOM bloat on spam
 const ALLOWED_LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 
 function isSafeLinkUrl(url) {
@@ -768,6 +769,14 @@ function restoreCooldowns() {
 function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
     if (!container) return;
+
+    // Cap concurrent toasts. Without this, a spam-clicked favorite or a
+    // cascade of errors can stack unbounded DOM nodes in the container.
+    // Drop the oldest toast(s) so the most recent feedback stays visible.
+    const existingToasts = container.querySelectorAll('.toast');
+    for (let i = 0; i <= existingToasts.length - MAX_TOASTS; i++) {
+        existingToasts[i].remove();
+    }
 
     const icons = {
         success: 'bx-check-circle',
