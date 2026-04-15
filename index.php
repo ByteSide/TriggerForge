@@ -138,9 +138,14 @@ if (!is_array($config)) {
 
                         <div class="category-content" data-category-id="<?php echo htmlspecialchars($categoryId); ?>">
                             <div class="button-grid">
+                                <?php
+                                    $usedItemIds = [];
+                                    $itemOffset = 0;
+                                ?>
                                 <?php foreach ($webhooks as $index => $item): ?>
                                     <?php
                                         if (!is_array($item)) { continue; }
+                                        $itemOffset++;
                                         // Determine type (default: webhook for backwards compatibility)
                                         $type = $item['type'] ?? 'webhook';
                                         // Sanitize the index so string keys with special characters
@@ -152,6 +157,13 @@ if (!is_array($config)) {
                                         if ($safeIndex === '') {
                                             $safeIndex = 'item';
                                         }
+                                        // Two string keys that differ only in stripped characters
+                                        // (e.g. "foo bar" and "foobar") would otherwise collapse
+                                        // to the same $itemId and produce duplicate DOM ids.
+                                        if (in_array($safeIndex, $usedItemIds, true)) {
+                                            $safeIndex .= '-' . $itemOffset;
+                                        }
+                                        $usedItemIds[] = $safeIndex;
                                         $itemId = $categoryId . '-' . $safeIndex;
                                         $itemName = (string)($item['name'] ?? '');
                                         $itemDesc = (string)($item['description'] ?? $itemName);
