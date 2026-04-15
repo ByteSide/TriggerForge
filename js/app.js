@@ -158,6 +158,9 @@ function initAccordion() {
         header.addEventListener('click', () => toggleCategory(categoryId));
         header.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
+                // Ignore OS key auto-repeat — holding Space would otherwise
+                // rapid-toggle the category open/closed.
+                if (e.repeat) return;
                 e.preventDefault();
                 toggleCategory(categoryId);
             }
