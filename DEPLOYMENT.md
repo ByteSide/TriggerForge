@@ -109,9 +109,9 @@ Recommended programs:
 
 If needed, set the following permissions (CHMOD):
 - `.htaccess` → 644
-- `.htpasswd` → 644
+- `.htpasswd` → **600** (owner-only; prevents other local users on shared hosting from reading the hashed credentials). If Apache runs as a different user and fails to read it, try 640 with the Apache group as the file group.
 - `index.php` → 644
-- `config/config.php` → 644
+- `config/config.php` → **600** (same reason — the config contains your webhook URLs)
 - `api/trigger.php` → 644
 - All folders → 755
 

@@ -66,7 +66,7 @@ Avoid dropping temporary `__DIR__` scripts into the web root; forgetting to dele
 **"Internal Server Error 500"**
 - Check the path in `AuthUserFile` - must be absolute
 - Make sure `.htpasswd` is uploaded
-- Check file permissions (`.htpasswd` should be 644)
+- Check file permissions (`.htpasswd` should be 600 or 640 — NOT 644, otherwise other local users on shared hosting can read your hashed credentials)
 
 **Login Not Working**
 - Make sure you're using the correct password
