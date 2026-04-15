@@ -263,8 +263,8 @@ if (!is_array($config)) {
     <div class="toast-container" id="toastContainer" role="status" aria-live="polite" aria-atomic="false"></div>
     
     <!-- Confirmation Modal -->
-    <div class="confirmation-modal-backdrop" id="confirmationModalBackdrop"></div>
-    <div class="confirmation-modal" id="confirmationModal" role="dialog" aria-modal="true" aria-labelledby="confirmationModalTitle" aria-describedby="confirmationModalText">
+    <div class="confirmation-modal-backdrop" id="confirmationModalBackdrop" aria-hidden="true"></div>
+    <div class="confirmation-modal" id="confirmationModal" role="dialog" aria-modal="true" aria-labelledby="confirmationModalTitle" aria-describedby="confirmationModalText" aria-hidden="true">
         <div class="confirmation-modal-content">
             <div class="confirmation-modal-header">
                 <i class='bx bx-bolt confirmation-modal-icon'></i>

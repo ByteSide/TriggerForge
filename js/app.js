@@ -978,9 +978,13 @@ function showConfirmationModal(webhookName, callback) {
         if (callback) callback();
     }, { once: true });
 
-    // Show modal with animation
+    // Show modal with animation. aria-hidden is removed in sync with the
+    // visible state — the dialog starts aria-hidden in HTML so AT don't
+    // announce it on page load while it's still invisible (opacity:0).
     backdrop.classList.add('active');
     modal.classList.add('active');
+    modal.removeAttribute('aria-hidden');
+    backdrop.removeAttribute('aria-hidden');
 
     // Focus on confirm button for accessibility. Gate on `.active` so that
     // if the user dismisses the modal within the 100ms transition window
@@ -1001,6 +1005,8 @@ function hideConfirmationModal() {
 
     modal.classList.remove('active');
     backdrop.classList.remove('active');
+    modal.setAttribute('aria-hidden', 'true');
+    backdrop.setAttribute('aria-hidden', 'true');
 
     if (confirmationModalReturnFocus && typeof confirmationModalReturnFocus.focus === 'function') {
         try { confirmationModalReturnFocus.focus(); } catch (e) { /* detached node */ }
