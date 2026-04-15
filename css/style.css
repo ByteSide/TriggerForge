@@ -1311,6 +1311,7 @@ body.test-mode * {
     transition: all 0.3s ease;
     border: 2px solid var(--border);
     box-shadow: var(--shadow-sm);
+    touch-action: manipulation;
 }
 
 .mode-toggle-option {
