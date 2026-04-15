@@ -218,6 +218,8 @@ if (!is_array($config)) {
                                             <?php if ($faviconUrl !== ''): ?>
                                                 <img src="<?php echo htmlspecialchars($faviconUrl); ?>"
                                                      alt=""
+                                                     loading="lazy"
+                                                     decoding="async"
                                                      class="link-btn-favicon">
                                                 <i class='bx bx-link-alt link-btn-icon-fallback' style="display:none;"></i>
                                             <?php else: ?>
