@@ -1815,6 +1815,7 @@ body.test-mode * {
     transition: all var(--transition-fast);
     border: 2px solid;
     font-family: inherit;
+    touch-action: manipulation;
 }
 
 .confirmation-modal-btn i {
