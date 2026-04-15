@@ -77,6 +77,16 @@ SetEnvIf Request_URI "\.well-known/acme-challenge/" allow_acme
 # through — RedirectMatch returns 404 for any path containing these segments.
 RedirectMatch 404 (^|/)\.(git|svn|hg|bzr|DS_Store)(/|$)
 
+# Cache static assets for a week so repeat visits stay fast. CSS/JS/fonts/
+# icons don't have content-hashed filenames, so this is a moderate default
+# that balances cache efficiency vs. update visibility. Users can hard-
+# refresh (Ctrl+Shift+R) after deploying an update.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(css|js|woff2?|ttf|svg|png|ico)$">
+        Header set Cache-Control "public, max-age=604800"
+    </FilesMatch>
+</IfModule>
+
 # Additional security headers
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
