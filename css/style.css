@@ -1925,6 +1925,7 @@ body.test-mode * {
     transition: all var(--transition-base);
     box-shadow: var(--shadow-lg);
     z-index: 900;
+    touch-action: manipulation;
     font-size: 1.5rem;
 }
 
