@@ -919,6 +919,9 @@ body {
 
 .toast-content {
     flex: 1;
+    /* min-width:0 lets long messages shrink within the flex parent so
+       overflow-wrap can kick in instead of blowing out the toast width. */
+    min-width: 0;
 }
 
 .toast-title {
@@ -929,6 +932,9 @@ body {
 .toast-message {
     font-size: 0.875rem;
     color: var(--text-secondary);
+    /* Break long URLs in error messages (e.g. "Connection error: …") so
+       they don't push the toast wider than max-width. */
+    overflow-wrap: anywhere;
 }
 
 .toast-close {
