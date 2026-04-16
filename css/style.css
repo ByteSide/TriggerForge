@@ -2228,9 +2228,6 @@ body.test-mode .confirmation-modal {
 
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
-    #particle-canvas {
-        display: none;
-    }
     /* Flatten all animations and transitions to effectively-instant so
        users who opted out of motion don't get the pulseGlow / shake /
        waveBottom / bannerPulse / heartbeat loops. `0.01ms` (not 0s) is
