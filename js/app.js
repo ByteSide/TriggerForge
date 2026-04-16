@@ -395,23 +395,30 @@ function createFavoriteButton(itemId, name, position, type, url = null, faviconS
             const img = document.createElement('img');
             img.alt = '';
             img.className = 'favorite-link-btn-favicon';
-            // Attach onerror BEFORE setting src — a cached 404 can fire
-            // the error synchronously from the src assignment and would
-            // otherwise run before the handler is wired up.
-            img.onerror = function () {
-                this.style.display = 'none';
-                if (this.nextElementSibling) {
-                    this.nextElementSibling.style.display = 'inline-block';
-                }
-            };
-            img.src = faviconSrc;
-            btn.appendChild(img);
 
             const fallback = document.createElement('i');
             fallback.className = 'bx bx-link-alt favorite-link-btn-icon';
             fallback.style.display = 'none';
             fallback.setAttribute('aria-hidden', 'true');
+
+            // Close over `img` and `fallback` instead of relying on
+            // `this.nextElementSibling` — the latter is null if the error
+            // fires synchronously from `img.src = ...` (cached 404) before
+            // the fallback has been appended, leaving the button iconless.
+            const handleFaviconError = () => {
+                img.style.display = 'none';
+                fallback.style.display = 'inline-block';
+            };
+            img.onerror = handleFaviconError;
+            img.src = faviconSrc;
+            btn.appendChild(img);
             btn.appendChild(fallback);
+
+            // Cached 404 can also complete before onerror fires (browser
+            // fires it on the next tick but marks complete=true immediately).
+            if (img.complete && img.naturalWidth === 0) {
+                handleFaviconError();
+            }
         } else {
             const icon = document.createElement('i');
             icon.className = 'bx bx-link-alt favorite-link-btn-icon';
