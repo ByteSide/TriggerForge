@@ -783,6 +783,7 @@ body {
     position: relative;
     overflow: hidden;
     touch-action: manipulation;
+    font-family: inherit;
 }
 
 .favorite-btn::before {
@@ -1660,6 +1661,7 @@ body.test-mode * {
     position: relative;
     overflow: hidden;
     touch-action: manipulation;
+    font-family: inherit;
 }
 
 .favorite-link-btn::before {
