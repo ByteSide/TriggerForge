@@ -170,17 +170,6 @@ body {
     position: relative;
 }
 
-/* Particle Canvas Background */
-#particle-canvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    pointer-events: none;
-}
-
 /* === Container === */
 .container {
     width: 100%;
@@ -204,11 +193,6 @@ body {
 @keyframes pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
     50% { opacity: 0.8; transform: scale(1.05); }
-}
-
-@keyframes glow {
-    0%, 100% { box-shadow: var(--shadow-md); }
-    50% { box-shadow: var(--shadow-lg); }
 }
 
 @keyframes pulseGlow {
@@ -1515,10 +1499,6 @@ body.test-mode * {
     50%, 100% {
         left: 200%;
     }
-}
-
-.trigger-btn {
-    position: relative;
 }
 
 .trigger-btn-favorite {
