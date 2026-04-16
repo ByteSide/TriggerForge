@@ -150,7 +150,7 @@ function initAccordion() {
     // Load saved states
     categoryHeaders.forEach(header => {
         const categoryId = header.getAttribute('data-category-id');
-        const content = document.querySelector(`.category-content[data-category-id="${categoryId}"]`);
+        const content = document.querySelector(`.category-content[data-category-id="${CSS.escape(categoryId)}"]`);
 
         if (!content) return;
 
@@ -185,8 +185,8 @@ function initAccordion() {
 }
 
 function toggleCategory(categoryId) {
-    const header = document.querySelector(`.category-header[data-category-id="${categoryId}"]`);
-    const content = document.querySelector(`.category-content[data-category-id="${categoryId}"]`);
+    const header = document.querySelector(`.category-header[data-category-id="${CSS.escape(categoryId)}"]`);
+    const content = document.querySelector(`.category-content[data-category-id="${CSS.escape(categoryId)}"]`);
 
     if (!header || !content) return;
 
