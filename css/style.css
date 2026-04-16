@@ -1798,6 +1798,7 @@ body.test-mode * {
     color: var(--text-secondary);
     line-height: 1.6;
     margin: 0;
+    overflow-wrap: anywhere;
 }
 
 .confirmation-modal-text strong {
