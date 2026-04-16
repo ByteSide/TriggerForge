@@ -78,8 +78,7 @@
     --color-primary: #FD7D00;
     --color-primary-hover: #FFA500;
     --color-primary-dark: #d66a00;
-    --color-primary-glow: rgba(253, 125, 0, 0.3);
-    
+
     /* Background Layers - ByteSide.io Style */
     --bg-primary: #06171E;
     --bg-secondary: #030D11;
@@ -88,8 +87,6 @@
     
     /* Accent Colors - Teal */
     --accent: #015351;
-    --accent-hover: #017D7A;
-    --accent-glow: rgba(1, 83, 81, 0.2);
     
     /* Text Colors */
     --text-primary: #ffffff;
@@ -98,7 +95,6 @@
     
     /* Borders */
     --border: rgba(253, 125, 0, 0.3);
-    --border-accent: rgba(253, 125, 0, 0.4);
     --border-glass: rgba(255, 255, 255, 0.1);
     
     /* Status Colors */
@@ -125,23 +121,18 @@
     --space-5: 20px;
     --space-6: 24px;
     --space-8: 32px;
-    --space-12: 48px;
-    --space-16: 64px;
     
     /* Border Radius */
     --radius-sm: 6px;
     --radius-md: 10px;
     --radius-lg: 14px;
-    --radius-xl: 20px;
     --radius-full: 9999px;
     
     /* Transitions */
     --transition-fast: 150ms ease;
     --transition-base: 250ms ease;
-    --transition-slow: 400ms ease;
     
     /* Glassmorphism */
-    --glass-bg: rgba(12, 35, 45, 0.7);
     --glass-bg-hover: rgba(18, 47, 61, 0.8);
     --glass-blur: blur(10px);
     --glass-blur-strong: blur(20px);
