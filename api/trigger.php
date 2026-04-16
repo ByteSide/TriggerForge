@@ -149,9 +149,17 @@ if ($ch === false) {
 }
 
 // Restrict to HTTP(S) only — blocks SSRF via file://, gopher://, ldap://, etc.
-// Uses CURLPROTO_* constants when available, falls back to bitmask.
-$allowedProtocols = (defined('CURLPROTO_HTTP') ? CURLPROTO_HTTP : 1)
-    | (defined('CURLPROTO_HTTPS') ? CURLPROTO_HTTPS : 2);
+// PHP 8.3 deprecated the integer-bitmask CURLOPT_PROTOCOLS in favour of
+// CURLOPT_PROTOCOLS_STR (string "http,https"). Use the modern constant
+// when available so webhook fires don't emit E_DEPRECATED noise.
+$protocolOpts = [];
+if (defined('CURLOPT_PROTOCOLS_STR')) {
+    $protocolOpts[CURLOPT_PROTOCOLS_STR] = 'http,https';
+} else {
+    $allowedProtocols = (defined('CURLPROTO_HTTP') ? CURLPROTO_HTTP : 1)
+        | (defined('CURLPROTO_HTTPS') ? CURLPROTO_HTTPS : 2);
+    $protocolOpts[CURLOPT_PROTOCOLS] = $allowedProtocols;
+}
 
 // Cap how much of the webhook response we'll buffer. We only care about
 // the HTTP status code, not the body — but without a cap a malicious or
@@ -159,7 +167,7 @@ $allowedProtocols = (defined('CURLPROTO_HTTP') ? CURLPROTO_HTTP : 1)
 $maxResponseBytes = 65536; // 64 KB
 $bytesReceived = 0;
 
-curl_setopt_array($ch, [
+curl_setopt_array($ch, $protocolOpts + [
     // No CURLOPT_RETURNTRANSFER: CURLOPT_WRITEFUNCTION drives the body
     // handling instead, counting bytes and aborting on overflow.
     // Don't follow redirects. A compromised or misconfigured webhook
@@ -167,7 +175,6 @@ curl_setopt_array($ch, [
     // endpoints (e.g. 169.254.169.254 on AWS) — classic SSRF. Legitimate
     // webhooks don't need HTTP redirects; if one does, update config.
     CURLOPT_FOLLOWLOCATION => false,
-    CURLOPT_PROTOCOLS => $allowedProtocols,
     CURLOPT_CONNECTTIMEOUT => 10,
     CURLOPT_TIMEOUT => 30,
     CURLOPT_POST => true,
