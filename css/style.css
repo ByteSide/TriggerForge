@@ -228,35 +228,9 @@ body {
     }
 }
 
-@keyframes slideInUp {
-    from {
-        transform: translateY(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes fadeOut {
-    from { opacity: 1; }
-    to { opacity: 0; }
-}
-
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
-}
-
-@keyframes scaleIn {
-    from { transform: scale(0.9); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
 }
 
 @keyframes successPulse {
@@ -278,33 +252,6 @@ body {
         transform: translateX(100%) scaleX(0.8);
         opacity: 0.6;
     }
-}
-
-@keyframes pulse-dot {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
-}
-
-/* === Utility Classes === */
-.glass {
-    background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--border-glass);
-}
-
-.glass-strong {
-    background: var(--glass-bg-hover);
-    backdrop-filter: var(--glass-blur-strong);
-    -webkit-backdrop-filter: var(--glass-blur-strong);
-}
-
-.glow-primary {
-    box-shadow: var(--shadow-md);
-}
-
-.glow-accent {
-    box-shadow: var(--shadow-md);
 }
 
 /* === Header === */
@@ -344,12 +291,6 @@ body {
         0 0 10px rgba(253, 125, 0, 0.5),
         0 0 20px rgba(253, 125, 0, 0.3),
         0 0 30px rgba(253, 125, 0, 0.2);
-}
-
-.subtitle {
-    font-size: 1rem;
-    color: var(--text-secondary);
-    font-weight: 400;
 }
 
 /* === Main Content === */
@@ -922,10 +863,7 @@ body {
     min-width: 0;
 }
 
-.toast-title {
-    font-weight: 600;
-    margin-bottom: var(--space-1);
-}
+
 
 .toast-message {
     font-size: 0.875rem;
@@ -1041,13 +979,6 @@ body {
     font-size: 1.25rem;
 }
 
-.footer-tagline {
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-    margin-bottom: var(--space-1);
-    text-align: center;
-}
-
 .footer-version {
     color: var(--text-muted);
     font-size: 0.75rem;
@@ -1091,35 +1022,6 @@ body {
 
 .footer-copyright i {
     animation: heartbeat 1.5s ease-in-out infinite;
-}
-
-.footer-link {
-    color: var(--text-primary);
-    text-decoration: none;
-    font-weight: 600;
-    transition: all var(--transition-fast);
-    position: relative;
-}
-
-@media (hover: hover) {
-    .footer-link:hover {
-        color: var(--color-primary);
-    }
-
-    .footer-link:hover::after {
-        width: 100%;
-    }
-}
-
-.footer-link::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    width: 0;
-    height: 1px;
-    background: var(--color-primary);
-    transition: width var(--transition-fast);
 }
 
 /* ByteSide.io Logo in Footer */
@@ -1889,27 +1791,6 @@ body.test-mode * {
 
 .confirmation-modal-btn-confirm:active {
     transform: translateY(0) scale(0.98);
-}
-
-/* Modal Animations */
-@keyframes modalFadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
-@keyframes modalScaleIn {
-    from {
-        transform: translate(-50%, -50%) scale(0.9);
-        opacity: 0;
-    }
-    to {
-        transform: translate(-50%, -50%) scale(1);
-        opacity: 1;
-    }
 }
 
 /* === Scroll to Top Button === */
