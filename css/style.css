@@ -692,6 +692,7 @@ body {
 
 .trigger-btn-text {
     flex: 1;
+    min-width: 0;
     z-index: 1;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -1601,6 +1602,7 @@ body.test-mode * {
 
 .link-btn-text {
     flex: 1;
+    min-width: 0;
     z-index: 1;
     display: -webkit-box;
     -webkit-line-clamp: 2;
