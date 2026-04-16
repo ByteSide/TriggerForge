@@ -866,14 +866,19 @@ body {
     .container {
         padding: var(--space-6);
     }
-    
+
     .logo {
         font-size: 3rem;
     }
-    
+
     .button-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: var(--space-6);
+    }
+
+    .test-mode-banner {
+        margin-left: calc(var(--space-6) * -1);
+        margin-right: calc(var(--space-6) * -1);
     }
 }
 
@@ -881,9 +886,14 @@ body {
     .container {
         padding: var(--space-8);
     }
-    
+
     .button-grid {
         grid-template-columns: repeat(3, 1fr);
+    }
+
+    .test-mode-banner {
+        margin-left: calc(var(--space-8) * -1);
+        margin-right: calc(var(--space-8) * -1);
     }
 }
 
