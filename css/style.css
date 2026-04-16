@@ -1795,6 +1795,7 @@ body.test-mode * {
     border-radius: 50%;
     background: rgba(12, 35, 45, 0.05);
     backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border: 1px solid var(--border-glass);
     color: var(--color-primary);
     display: flex;
