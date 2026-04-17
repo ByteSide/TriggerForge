@@ -8,15 +8,24 @@
  * Structure for Webhooks:
  * [
  *     'type' => 'webhook',
+ *     'id'   => 'daily-report',                // optional, recommended. Stable
+ *                                              // identifier that survives
+ *                                              // reordering. Allowed chars:
+ *                                              // A-Z, a-z, 0-9, _, -.
+ *                                              // Without 'id', items get a
+ *                                              // positional id like
+ *                                              // "category-3" which changes
+ *                                              // when you add/remove items.
  *     'name' => 'Button Label',
  *     'webhook_url_test' => 'https://your-automation.com/webhook-test/unique-id',
  *     'webhook_url_prod' => 'https://your-automation.com/webhook/unique-id',
  *     'description' => 'Optional: What this webhook does'
  * ]
- * 
+ *
  * Structure for Custom Links:
  * [
  *     'type' => 'link',
+ *     'id'   => 'dashboard',                   // optional, same semantics as above
  *     'name' => 'Link Label',
  *     'url' => 'https://example.com/page',
  *     'description' => 'Optional: Description of the link'

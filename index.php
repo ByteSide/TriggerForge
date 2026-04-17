@@ -113,6 +113,10 @@ if (!is_array($config)) {
                 <?php
                     $usedCategoryIds = [];
                     $categoryIdx = 0;
+                    // Track user-provided 'id' values across ALL categories so
+                    // a duplicate explicit id doesn't produce colliding DOM ids
+                    // or corrupt localStorage state.
+                    $globalExplicitIds = [];
                 ?>
                 <?php foreach ($config as $categoryName => $webhooks): ?>
                     <?php
@@ -154,23 +158,48 @@ if (!is_array($config)) {
                                         $itemOffset++;
                                         // Determine type (default: webhook for backwards compatibility)
                                         $type = $item['type'] ?? 'webhook';
-                                        // Sanitize the index so string keys with special characters
-                                        // can't produce an itemId that breaks JS CSS selectors
-                                        // (data-webhook-id="..." queries) or localStorage keys.
-                                        $safeIndex = is_int($index)
-                                            ? (string)$index
-                                            : preg_replace('/[^A-Za-z0-9_-]/', '', (string)$index);
-                                        if ($safeIndex === '') {
-                                            $safeIndex = 'item';
+                                        // Prefer an explicit 'id' field if the config provides one.
+                                        // Explicit ids survive reordering of config.php and are the
+                                        // recommended way to keep favorites/cooldowns stable across
+                                        // edits. Fall back to the legacy positional id otherwise.
+                                        $explicitId = null;
+                                        if (isset($item['id']) && is_string($item['id'])) {
+                                            $candidate = preg_replace('/[^A-Za-z0-9_-]/', '', $item['id']);
+                                            if ($candidate !== '') {
+                                                $explicitId = $candidate;
+                                            }
                                         }
-                                        // Two string keys that differ only in stripped characters
-                                        // (e.g. "foo bar" and "foobar") would otherwise collapse
-                                        // to the same $itemId and produce duplicate DOM ids.
-                                        if (in_array($safeIndex, $usedItemIds, true)) {
-                                            $safeIndex .= '-' . $itemOffset;
+                                        if ($explicitId !== null) {
+                                            $itemId = $explicitId;
+                                            // Duplicate explicit ids would produce colliding DOM
+                                            // selectors — suffix with the positional offset so each
+                                            // DOM node is reachable, but emit a comment so the
+                                            // operator can spot the collision in View-Source.
+                                            if (in_array($itemId, $globalExplicitIds, true)) {
+                                                echo "<!-- TriggerForge: duplicate explicit id '"
+                                                    . htmlspecialchars($explicitId) . "' — suffixing -->\n";
+                                                $itemId = $explicitId . '-' . $itemOffset;
+                                            }
+                                            $globalExplicitIds[] = $itemId;
+                                        } else {
+                                            // Sanitize the index so string keys with special characters
+                                            // can't produce an itemId that breaks JS CSS selectors
+                                            // (data-webhook-id="..." queries) or localStorage keys.
+                                            $safeIndex = is_int($index)
+                                                ? (string)$index
+                                                : preg_replace('/[^A-Za-z0-9_-]/', '', (string)$index);
+                                            if ($safeIndex === '') {
+                                                $safeIndex = 'item';
+                                            }
+                                            // Two string keys that differ only in stripped characters
+                                            // (e.g. "foo bar" and "foobar") would otherwise collapse
+                                            // to the same $itemId and produce duplicate DOM ids.
+                                            if (in_array($safeIndex, $usedItemIds, true)) {
+                                                $safeIndex .= '-' . $itemOffset;
+                                            }
+                                            $usedItemIds[] = $safeIndex;
+                                            $itemId = $categoryId . '-' . $safeIndex;
                                         }
-                                        $usedItemIds[] = $safeIndex;
-                                        $itemId = $categoryId . '-' . $safeIndex;
                                         $itemName = (string)($item['name'] ?? '');
                                         $itemDesc = (string)($item['description'] ?? $itemName);
                                     ?>
