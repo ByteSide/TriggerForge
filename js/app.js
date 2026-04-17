@@ -92,6 +92,31 @@ function isSafeLinkUrl(url) {
     }
 }
 
+// === Global Error Boundary ===
+// Surface uncaught JS errors instead of letting them die silently in the
+// console. Rate-limited to one toast per 10 s so an error storm doesn't
+// carpet-bomb the UI with red toasts. Registered at module load — earlier
+// than initTriggerForge — so boot-time errors are captured too. If the
+// toast container doesn't exist yet (pre-init), we still log to console.
+let _lastBoundaryToastAt = 0;
+const _BOUNDARY_TOAST_COOLDOWN = 10000;
+function reportBoundaryError() {
+    const now = Date.now();
+    if (now - _lastBoundaryToastAt < _BOUNDARY_TOAST_COOLDOWN) return;
+    _lastBoundaryToastAt = now;
+    if (typeof showToast === 'function' && document.getElementById('toastContainer')) {
+        showToast('Something broke — see console (F12)', 'error');
+    }
+}
+window.addEventListener('error', (e) => {
+    console.error('[TriggerForge] uncaught error:', e.error || e.message, e);
+    reportBoundaryError();
+});
+window.addEventListener('unhandledrejection', (e) => {
+    console.error('[TriggerForge] unhandled promise rejection:', e.reason);
+    reportBoundaryError();
+});
+
 // === Initialization ===
 function initTriggerForge() {
     console.log('🚀 TriggerForge Premium Loading...');
