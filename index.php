@@ -28,10 +28,11 @@ if (!is_array($config)) {
     <meta name="color-scheme" content="dark">
     <title>TriggerForge</title>
     
-    <!-- CSS -->
+    <!-- CSS. filemtime() query strings force the browser to refetch on
+         deploy — avoids the classic "hard-reload needed after update" trap. -->
     <link rel="stylesheet" href="assets/icons/boxicons/boxicons.css">
-    <link rel="stylesheet" href="css/bg.css">
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/bg.css?v=<?php echo (int)@filemtime(__DIR__.'/css/bg.css'); ?>">
+    <link rel="stylesheet" href="css/style.css?v=<?php echo (int)@filemtime(__DIR__.'/css/style.css'); ?>">
     
     <!-- Favicons (relative so deployments under a subdirectory still resolve) -->
     <link rel="icon" type="image/png" href="assets/favicons/favicon-96x96.png" sizes="96x96" />
@@ -296,7 +297,7 @@ if (!is_array($config)) {
     </button>
     
     <!-- JavaScript -->
-    <script src="js/particles.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/particles.js?v=<?php echo (int)@filemtime(__DIR__.'/js/particles.js'); ?>"></script>
+    <script src="js/app.js?v=<?php echo (int)@filemtime(__DIR__.'/js/app.js'); ?>"></script>
 </body>
 </html>
