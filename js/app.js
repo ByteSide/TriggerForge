@@ -9,7 +9,9 @@ const state = {
     cooldowns: {},
     categoryStates: {},
     isTestMode: false,
-    settings: {}
+    settings: {},
+    lastTriggered: {},
+    triggerCounts: {}
 };
 
 // === Constants ===
@@ -154,6 +156,7 @@ function initTriggerForge() {
     initSettings();
     initSearch();
     initKeyboardShortcuts();
+    initTriggerWidgets();
     initScrollToTop();
 
     // Restore cooldowns from previous session
@@ -208,6 +211,16 @@ function loadState() {
         {},
         v => v !== null && typeof v === 'object' && !Array.isArray(v)
     ));
+    state.lastTriggered = loadStateKey(
+        'triggerforge_last_triggered',
+        {},
+        v => v !== null && typeof v === 'object' && !Array.isArray(v)
+    );
+    state.triggerCounts = loadStateKey(
+        'triggerforge_trigger_counts',
+        {},
+        v => v !== null && typeof v === 'object' && !Array.isArray(v)
+    );
 }
 
 function saveState() {
@@ -218,7 +231,9 @@ function saveState() {
         ['triggerforge_categories_state', state.categoryStates],
         ['triggerforge_cooldowns', state.cooldowns],
         ['triggerforge_test_mode', state.isTestMode],
-        ['triggerforge_settings', state.settings]
+        ['triggerforge_settings', state.settings],
+        ['triggerforge_last_triggered', state.lastTriggered],
+        ['triggerforge_trigger_counts', state.triggerCounts]
     ];
     writes.forEach(([key, value]) => {
         try {
@@ -779,6 +794,18 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
 }
 
 function handleSuccess(button, webhookName) {
+    // Record stats BEFORE the visual flash so even a very quick re-render
+    // sees the updated counters. Guard on webhookId because the legacy
+    // DOM structure lets us reach this without one in edge cases.
+    const webhookId = button.getAttribute('data-webhook-id');
+    if (webhookId) {
+        state.lastTriggered[webhookId] = Date.now();
+        state.triggerCounts[webhookId] = (state.triggerCounts[webhookId] || 0) + 1;
+        saveState();
+        updateLastTriggeredFor(button);
+        updateTriggerCountFor(button);
+    }
+
     // Change icon temporarily
     const icon = button.querySelector('.trigger-btn-icon');
     const originalIconClass = icon ? icon.className : '';
@@ -1300,6 +1327,103 @@ function initSearch() {
     });
 }
 
+// === Trigger Widgets (Last-Triggered + Counter) ===
+// Small meta badges drawn inside each webhook button:
+//   • "3 min ago"-style stamp (state.settings.showLastTriggered, default on)
+//   • "12×" usage counter       (state.settings.showCounters,      default off)
+// Both are opt-outable from the settings modal. Both live under
+// aria-hidden so they don't spam screen readers on every update.
+function initTriggerWidgets() {
+    renderAllLastTriggered();
+    renderAllTriggerCounts();
+    // Refresh the relative labels every 30 s so "just now" naturally
+    // ages into "a minute ago", "3 minutes ago", etc. Counters don't
+    // need a timer — they only change via handleSuccess.
+    setInterval(renderAllLastTriggered, 30000);
+}
+
+function renderAllLastTriggered() {
+    const visible = state.settings.showLastTriggered !== false;
+    document.querySelectorAll('.trigger-btn').forEach(btn => {
+        updateLastTriggeredFor(btn, visible);
+    });
+}
+
+function updateLastTriggeredFor(btn, forcedVisible) {
+    const visible = forcedVisible !== undefined
+        ? forcedVisible
+        : state.settings.showLastTriggered !== false;
+    const id = btn.getAttribute('data-webhook-id');
+    const ts = id ? state.lastTriggered[id] : null;
+    let el = btn.querySelector('.trigger-btn-last');
+    if (!visible || !ts || typeof ts !== 'number') {
+        if (el) el.remove();
+        return;
+    }
+    if (!el) {
+        el = document.createElement('small');
+        el.className = 'trigger-btn-last';
+        el.setAttribute('aria-hidden', 'true');
+        btn.appendChild(el);
+    }
+    el.textContent = formatRelativeTime(ts);
+    el.setAttribute('data-ts', String(ts));
+}
+
+function renderAllTriggerCounts() {
+    const visible = state.settings.showCounters === true;
+    document.querySelectorAll('.trigger-btn').forEach(btn => {
+        updateTriggerCountFor(btn, visible);
+    });
+}
+
+function updateTriggerCountFor(btn, forcedVisible) {
+    const visible = forcedVisible !== undefined
+        ? forcedVisible
+        : state.settings.showCounters === true;
+    const id = btn.getAttribute('data-webhook-id');
+    const n = id ? state.triggerCounts[id] : 0;
+    let el = btn.querySelector('.trigger-btn-count');
+    if (!visible || !n) {
+        if (el) el.remove();
+        return;
+    }
+    if (!el) {
+        el = document.createElement('span');
+        el.className = 'trigger-btn-count';
+        el.setAttribute('aria-hidden', 'true');
+        btn.appendChild(el);
+    }
+    el.textContent = n + '×';
+}
+
+/**
+ * Format a past timestamp as a human-readable "3 min ago" string.
+ * Uses Intl.RelativeTimeFormat when available; falls back to a simple
+ * English string on ancient browsers without that API.
+ */
+function formatRelativeTime(ts) {
+    const diffMs = Date.now() - ts;
+    if (diffMs < 30000) return 'just now';
+    const secs = Math.floor(diffMs / 1000);
+    const mins = Math.floor(secs / 60);
+    const hrs  = Math.floor(mins / 60);
+    const days = Math.floor(hrs / 24);
+
+    if (typeof Intl !== 'undefined' && Intl.RelativeTimeFormat) {
+        const rtf = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
+        if (mins < 1)  return rtf.format(-secs, 'second');
+        if (mins < 60) return rtf.format(-mins, 'minute');
+        if (hrs  < 24) return rtf.format(-hrs, 'hour');
+        if (days < 7)  return rtf.format(-days, 'day');
+        return rtf.format(-Math.floor(days / 7), 'week');
+    }
+    if (mins < 1)   return secs + 's ago';
+    if (mins < 60)  return mins + ' min ago';
+    if (hrs  < 24)  return hrs + 'h ago';
+    return days + 'd ago';
+}
+
 // === Keyboard Shortcuts ===
 // Global keyboard shortcuts. `/` and Ctrl+K are handled in initSearch —
 // keep them there. Everything else lives here so the surface area of
@@ -1397,6 +1521,12 @@ function applySettings() {
     if (typeof s.fontScale === 'number' && s.fontScale > 0) {
         html.style.setProperty('--font-scale', String(s.fontScale));
     }
+
+    // Meta-widget visibility (last-triggered / trigger counts) is settings-
+    // driven. Re-render so toggling takes effect immediately. Safe to call
+    // pre-DOM — the inner querySelectorAll just returns an empty NodeList.
+    if (typeof renderAllLastTriggered === 'function') renderAllLastTriggered();
+    if (typeof renderAllTriggerCounts === 'function') renderAllTriggerCounts();
 }
 
 function initSettings() {

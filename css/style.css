@@ -2099,6 +2099,44 @@ body.test-mode .confirmation-modal {
     }
 }
 
+/* === Trigger button meta badges (last-triggered / counter) === */
+.trigger-btn-last {
+    position: absolute;
+    bottom: 4px;
+    right: var(--space-3);
+    font-size: 0.625rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    pointer-events: none;
+    z-index: 2;
+    /* Don't interfere with the existing overflow:hidden clipping or the
+       wave animation at the button bottom. */
+    max-width: calc(100% - var(--space-6));
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.trigger-btn-count {
+    position: absolute;
+    top: 4px;
+    left: var(--space-3);
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: var(--color-primary);
+    background: rgba(253, 125, 0, 0.12);
+    border: 1px solid rgba(253, 125, 0, 0.3);
+    padding: 1px 6px;
+    border-radius: var(--radius-full);
+    pointer-events: none;
+    z-index: 2;
+    line-height: 1.2;
+}
+
+/* On the tight mobile layout the meta badges eat into the label; allow
+   hiding them via a density class later. For now they stay visible. */
+
 /* === Search / Filter Bar === */
 .search-bar {
     position: relative;
