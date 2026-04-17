@@ -95,7 +95,26 @@ require __DIR__ . '/lib/render.php';
         </div>
         
         <!-- Main content with Webhook Buttons -->
-        <main class="main-content">
+        <main class="main-content" id="main-content">
+            <!-- Search / Filter bar. Hidden (aria-hidden) by default; JS
+                 unhides it only if there's at least one button to filter,
+                 so the empty-state page doesn't show a useless search box. -->
+            <div class="search-bar" id="searchBar" role="search">
+                <i class='bx bx-search search-bar-icon' aria-hidden="true"></i>
+                <input
+                    type="search"
+                    id="triggerSearch"
+                    class="search-bar-input"
+                    placeholder="Search webhooks… (press / to focus)"
+                    aria-label="Filter webhooks by name, category or description"
+                    autocomplete="off"
+                    spellcheck="false"
+                >
+                <button type="button" class="search-bar-clear" id="searchClearBtn" aria-label="Clear search" hidden>
+                    <i class='bx bx-x' aria-hidden="true"></i>
+                </button>
+            </div>
+
             <!-- Quick Action Bar (Favorites) -->
             <div class="favorites-bar" id="favoritesBar">
                 <div class="favorites-header">

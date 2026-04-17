@@ -2099,6 +2099,108 @@ body.test-mode .confirmation-modal {
     }
 }
 
+/* === Search / Filter Bar === */
+.search-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+    background: rgba(12, 35, 45, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-lg);
+    transition: border-color var(--transition-fast);
+}
+
+.search-bar:focus-within {
+    border-color: var(--color-primary);
+    box-shadow: var(--glow-primary);
+}
+
+.search-bar-icon {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.search-bar:focus-within .search-bar-icon {
+    color: var(--color-primary);
+}
+
+.search-bar-input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: 0;
+    outline: none;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.9375rem;
+    padding: var(--space-1) 0;
+}
+
+.search-bar-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* Kill the browser's native clear button — we render our own. */
+.search-bar-input::-webkit-search-cancel-button {
+    display: none;
+}
+
+.search-bar-clear {
+    background: none;
+    border: 0;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: var(--space-1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    font-size: 1.125rem;
+}
+
+@media (hover: hover) {
+    .search-bar-clear:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+    }
+}
+
+/* A hidden category section still occupies margin collapse otherwise —
+   use display:none via [hidden] to fully remove it from flow when the
+   search filter hides it. */
+.category-section[hidden],
+.trigger-btn[hidden],
+.custom-link-btn[hidden] {
+    display: none !important;
+}
+
+/* Skip-link for keyboard users. Visible only when focused. */
+.skip-link {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-primary);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 600;
+    border-radius: 0 0 var(--radius-md) 0;
+    transform: translateY(-100%);
+    transition: transform var(--transition-fast);
+    z-index: 99999;
+}
+
+.skip-link:focus-visible {
+    transform: translateY(0);
+}
+
 /* === Settings Button + Modal === */
 .settings-btn {
     position: absolute;

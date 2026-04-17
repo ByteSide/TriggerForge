@@ -152,6 +152,7 @@ function initTriggerForge() {
     initModeToggle();
     initConfirmationModal();
     initSettings();
+    initSearch();
     initScrollToTop();
 
     // Restore cooldowns from previous session
@@ -1201,6 +1202,100 @@ function initScrollToTop() {
         setTimeout(() => {
             scrollToTopBtn.style.transform = '';
         }, 150);
+    });
+}
+
+// === Search / Filter ===
+function initSearch() {
+    const searchBar = document.getElementById('searchBar');
+    const input = document.getElementById('triggerSearch');
+    const clearBtn = document.getElementById('searchClearBtn');
+    if (!searchBar || !input) return;
+
+    // Hide the search bar if there are no items to search. One-line no-op
+    // UI takes up layout space and draws attention away from the empty
+    // state; suppress it until at least one button exists.
+    const buttons = document.querySelectorAll('.trigger-btn, .custom-link-btn');
+    if (buttons.length === 0) {
+        searchBar.hidden = true;
+        return;
+    }
+
+    const applyFilter = (raw) => {
+        const q = String(raw || '').toLowerCase().trim();
+        const all = document.querySelectorAll('.trigger-btn, .custom-link-btn');
+
+        all.forEach(btn => {
+            if (q === '') {
+                btn.hidden = false;
+                return;
+            }
+            // Collect searchable text from the DOM so we don't need a
+            // parallel JS-side index. Name > category > description (title).
+            const name = (btn.getAttribute('data-webhook-name') ||
+                          btn.getAttribute('data-link-name') || '').toLowerCase();
+            const category = (btn.getAttribute('data-category') || '').toLowerCase();
+            const desc = (btn.getAttribute('title') || '').toLowerCase();
+            btn.hidden = !(name.includes(q) || category.includes(q) || desc.includes(q));
+        });
+
+        // Hide whole category sections whose items all got filtered out.
+        // When q is empty, always re-show so an earlier hidden state
+        // doesn't stick around.
+        document.querySelectorAll('.category-section').forEach(section => {
+            if (q === '') {
+                section.hidden = false;
+                return;
+            }
+            const visible = section.querySelector(
+                '.trigger-btn:not([hidden]), .custom-link-btn:not([hidden])'
+            );
+            section.hidden = !visible;
+        });
+
+        if (clearBtn) clearBtn.hidden = q === '';
+    };
+
+    input.addEventListener('input', (e) => applyFilter(e.target.value));
+
+    // Escape inside the input clears the query (but doesn't blur).
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            e.stopPropagation();
+            if (input.value !== '') {
+                input.value = '';
+                applyFilter('');
+            } else {
+                input.blur();
+            }
+        }
+    });
+
+    if (clearBtn) {
+        clearBtn.addEventListener('click', () => {
+            input.value = '';
+            applyFilter('');
+            input.focus();
+        });
+    }
+
+    // Global shortcut: `/` or Ctrl/Cmd+K focuses the search input,
+    // unless the user is already typing somewhere (input/textarea/select
+    // or a contenteditable element).
+    document.addEventListener('keydown', (e) => {
+        if (e.defaultPrevented) return;
+        const target = document.activeElement;
+        const inField = target && (
+            ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) ||
+            target.isContentEditable
+        );
+        const isSlash = e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey;
+        const isCtrlK = e.key.toLowerCase() === 'k' && (e.ctrlKey || e.metaKey) && !e.altKey;
+        if ((isSlash && !inField) || isCtrlK) {
+            e.preventDefault();
+            input.focus();
+            input.select();
+        }
     });
 }
 
