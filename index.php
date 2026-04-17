@@ -63,7 +63,12 @@ require __DIR__ . '/lib/render.php';
         <!-- Header with Typography Logo -->
         <header class="header">
             <h1 class="logo">Trigger<span class="logo__forge">Forge</span></h1>
-            
+
+            <!-- Settings (anchored top-right of the header) -->
+            <button type="button" class="settings-btn" id="settingsBtn" aria-label="Open settings" title="Settings">
+                <i class='bx bx-cog'></i>
+            </button>
+
             <!-- TEST/PROD Toggle -->
             <div class="mode-toggle-container">
                 <span class="mode-toggle-label">Mode:</span>
@@ -258,6 +263,32 @@ require __DIR__ . '/lib/render.php';
         </div>
     </div>
     
+    <!-- Settings Modal -->
+    <div class="settings-modal-backdrop" id="settingsModalBackdrop" aria-hidden="true" inert></div>
+    <div class="settings-modal" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle" aria-hidden="true" inert>
+        <div class="settings-modal-content">
+            <div class="settings-modal-header">
+                <i class='bx bx-cog settings-modal-icon' aria-hidden="true"></i>
+                <h3 class="settings-modal-title" id="settingsModalTitle">Settings</h3>
+                <button type="button" class="settings-modal-close" id="settingsModalBtnClose" aria-label="Close settings">
+                    <i class='bx bx-x' aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="settings-modal-body">
+                <p class="settings-placeholder">
+                    More settings land here as features mature. Sections for Appearance, Behavior and Data will fill up automatically as later phases ship — your preferences roll forward across updates.
+                </p>
+                <div class="settings-section">
+                    <h4 class="settings-section-title">Data</h4>
+                    <button type="button" class="settings-action-btn" id="settingsResetBtn">
+                        <i class='bx bx-reset' aria-hidden="true"></i>
+                        <span>Reset settings to defaults</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scroll to Top Button -->
     <button class="scroll-to-top" id="scrollToTopBtn" aria-label="Scroll to top">
         <i class='bx bx-chevron-up'></i>

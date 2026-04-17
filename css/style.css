@@ -2099,6 +2099,221 @@ body.test-mode .confirmation-modal {
     }
 }
 
+/* === Settings Button + Modal === */
+.settings-btn {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(12, 35, 45, 0.15);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border-glass);
+    border-radius: 50%;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.25rem;
+    transition: all var(--transition-fast);
+    touch-action: manipulation;
+}
+
+@media (hover: hover) {
+    .settings-btn:hover {
+        background: rgba(12, 35, 45, 0.3);
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+        transform: rotate(45deg);
+    }
+}
+
+.settings-btn:active {
+    transform: scale(0.95);
+}
+
+.settings-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    z-index: 10000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-base);
+}
+
+.settings-modal-backdrop.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+.settings-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    width: 90%;
+    max-width: 560px;
+    max-height: 85vh;
+    overflow-y: auto;
+    background: var(--glass-bg-hover);
+    backdrop-filter: var(--glass-blur-strong);
+    -webkit-backdrop-filter: var(--glass-blur-strong);
+    border: 2px solid var(--border-glass);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg), var(--glow-primary);
+    z-index: 10001;
+    opacity: 0;
+    pointer-events: none;
+    transition: all var(--transition-base);
+}
+
+.settings-modal.active {
+    opacity: 1;
+    pointer-events: all;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.settings-modal-content {
+    padding: var(--space-6);
+}
+
+.settings-modal-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--border);
+}
+
+.settings-modal-icon {
+    font-size: 1.75rem;
+    color: var(--color-primary);
+}
+
+.settings-modal-title {
+    flex: 1;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.settings-modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+@media (hover: hover) {
+    .settings-modal-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+    }
+}
+
+.settings-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.settings-placeholder {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    padding: var(--space-3) var(--space-4);
+    background: rgba(1, 83, 81, 0.08);
+    border: 1px solid rgba(1, 83, 81, 0.2);
+    border-radius: var(--radius-md);
+    margin: 0;
+}
+
+.settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.settings-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.settings-action-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    touch-action: manipulation;
+}
+
+.settings-action-btn i {
+    font-size: 1.125rem;
+    color: var(--color-primary);
+}
+
+@media (hover: hover) {
+    .settings-action-btn:hover {
+        background: rgba(253, 125, 0, 0.1);
+        border-color: var(--color-primary);
+    }
+}
+
+.settings-action-btn:active {
+    transform: scale(0.98);
+}
+
+/* Mobile: settings button smaller + modal fullscreen */
+@media (max-width: 599px) {
+    .settings-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 1.125rem;
+        top: var(--space-3);
+        right: var(--space-3);
+    }
+
+    .settings-modal {
+        width: 95%;
+    }
+
+    .settings-modal-content {
+        padding: var(--space-4);
+    }
+}
+
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
     /* Flatten all animations and transitions to effectively-instant so

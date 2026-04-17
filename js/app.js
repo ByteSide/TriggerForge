@@ -8,7 +8,8 @@ const state = {
     favorites: [],
     cooldowns: {},
     categoryStates: {},
-    isTestMode: false
+    isTestMode: false,
+    settings: {}
 };
 
 // === Constants ===
@@ -17,6 +18,69 @@ const TOAST_DURATION = 4000; // 4 seconds
 const MAX_FAVORITES = 10;
 const MAX_TOASTS = 5; // cap concurrent toasts to prevent DOM bloat on spam
 const ALLOWED_LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
+
+// === Settings ===
+// Central default object. Every new feature adds its default here; persisted
+// settings are deep-merged against this so new keys in a release don't leave
+// upgrading users with `undefined` values. `features.*` gates any feature
+// whose incomplete state could confuse the user — switch to `true` once the
+// feature is stable.
+const DEFAULT_SETTINGS = {
+    // Appearance
+    theme: 'dark',                // 'dark' | 'light' | 'auto'
+    accent: 'orange',             // 'orange' | 'blue' | 'green' | 'red' | 'violet' | 'pink'
+    density: 'comfortable',       // 'compact' | 'comfortable' | 'spacious'
+    layout: 'grid',               // 'grid' | 'list'
+    particles: 'standard',        // 'standard' | 'minimal' | 'off'
+    fontScale: 1,                 // 0.875 | 1 | 1.125 | 1.25
+    // Behavior
+    sortOrder: 'config',          // 'config' | 'alphabet' | 'lastUsed' | 'mostUsed'
+    showCounters: false,
+    showLastTriggered: true,
+    haptic: true,
+    favoritesCollapsed: false,
+    // Feature flags — each gates a not-yet-stable feature.
+    features: {
+        history: false,
+        chains: false,
+        bulkFire: false,
+        undo: false,
+        pullToRefresh: false,
+        offlineQueue: false,
+        pushNotifications: false
+    }
+};
+
+/**
+ * Deep-merge a persisted settings object against DEFAULT_SETTINGS. Keys in
+ * `saved` that are not in DEFAULT_SETTINGS are dropped (forward-compat: a
+ * downgrade doesn't carry unknown keys forward). Missing keys fall back to
+ * the default. Type-mismatched keys (e.g. saved theme === 42) fall back too.
+ */
+function mergeSettings(saved) {
+    const out = {};
+    for (const key of Object.keys(DEFAULT_SETTINGS)) {
+        const def = DEFAULT_SETTINGS[key];
+        const val = saved && typeof saved === 'object' ? saved[key] : undefined;
+        if (def !== null && typeof def === 'object' && !Array.isArray(def)) {
+            // Recurse into object values (e.g. `features`).
+            out[key] = mergeSettings.call(null, val);
+            // But keep the default's keys, not the saved's
+            const merged = {};
+            for (const subKey of Object.keys(def)) {
+                const subDef = def[subKey];
+                const subVal = val && typeof val === 'object' ? val[subKey] : undefined;
+                merged[subKey] = typeof subVal === typeof subDef ? subVal : subDef;
+            }
+            out[key] = merged;
+        } else if (typeof val === typeof def) {
+            out[key] = val;
+        } else {
+            out[key] = def;
+        }
+    }
+    return out;
+}
 
 function isSafeLinkUrl(url) {
     if (!url || typeof url !== 'string') return false;
@@ -50,6 +114,11 @@ function initTriggerForge() {
     // Load state from LocalStorage
     loadState();
 
+    // Apply persisted look-and-feel BEFORE any init so that category icons,
+    // density, layout, font-scale, etc. already match the user's preferences
+    // on first paint (no visible re-layout after JS boot).
+    applySettings();
+
     // Initialize all modules
     initAccordion();
     initFavorites();
@@ -57,6 +126,7 @@ function initTriggerForge() {
     initLinkButtons();
     initModeToggle();
     initConfirmationModal();
+    initSettings();
     initScrollToTop();
 
     // Restore cooldowns from previous session
@@ -106,6 +176,11 @@ function loadState() {
         false,
         v => typeof v === 'boolean'
     );
+    state.settings = mergeSettings(loadStateKey(
+        'triggerforge_settings',
+        {},
+        v => v !== null && typeof v === 'object' && !Array.isArray(v)
+    ));
 }
 
 function saveState() {
@@ -115,7 +190,8 @@ function saveState() {
         ['triggerforge_favorites', state.favorites],
         ['triggerforge_categories_state', state.categoryStates],
         ['triggerforge_cooldowns', state.cooldowns],
-        ['triggerforge_test_mode', state.isTestMode]
+        ['triggerforge_test_mode', state.isTestMode],
+        ['triggerforge_settings', state.settings]
     ];
     writes.forEach(([key, value]) => {
         try {
@@ -1101,5 +1177,118 @@ function initScrollToTop() {
             scrollToTopBtn.style.transform = '';
         }, 150);
     });
+}
+
+// === Settings ===
+// applySettings projects state.settings onto the DOM. It's the single source
+// of truth for visual preferences: later feature modules (theme switch,
+// density, etc.) just read state.settings and call applySettings() again.
+// Keep it idempotent — it may be called on boot, after any settings change,
+// and (later) after import/restore.
+function applySettings() {
+    const s = state.settings || DEFAULT_SETTINGS;
+    const html = document.documentElement;
+    const body = document.body;
+
+    // Theme — resolved 'auto' to dark/light via media query. Inline head
+    // script (added in a later phase) pre-sets this to avoid a theme flash;
+    // we re-apply here in case settings changed mid-session.
+    let effectiveTheme = s.theme;
+    if (effectiveTheme === 'auto') {
+        effectiveTheme = window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: light)').matches
+            ? 'light' : 'dark';
+    }
+    html.dataset.theme = effectiveTheme;
+
+    // Accent / density / layout / font-scale are data attributes so CSS
+    // can target them with [data-accent="blue"] selectors once the theme
+    // sheet adds those rules in later phases.
+    body.dataset.accent = s.accent;
+    body.dataset.density = s.density;
+    body.dataset.layout = s.layout;
+    body.dataset.particles = s.particles;
+    if (typeof s.fontScale === 'number' && s.fontScale > 0) {
+        html.style.setProperty('--font-scale', String(s.fontScale));
+    }
+}
+
+function initSettings() {
+    const btnOpen = document.getElementById('settingsBtn');
+    const modal = document.getElementById('settingsModal');
+    const backdrop = document.getElementById('settingsModalBackdrop');
+    const btnClose = document.getElementById('settingsModalBtnClose');
+    const btnReset = document.getElementById('settingsResetBtn');
+
+    if (!btnOpen || !modal || !backdrop) {
+        // The markup may not be on the page yet if this JS is loaded on a
+        // legacy install that hasn't pulled the latest index.php. Fail soft.
+        return;
+    }
+
+    let returnFocus = null;
+
+    const open = () => {
+        returnFocus = document.activeElement;
+        backdrop.classList.add('active');
+        modal.classList.add('active');
+        modal.removeAttribute('aria-hidden');
+        backdrop.removeAttribute('aria-hidden');
+        modal.removeAttribute('inert');
+        backdrop.removeAttribute('inert');
+        const container = document.querySelector('.container');
+        const scrollBtn = document.getElementById('scrollToTopBtn');
+        if (container) container.setAttribute('inert', '');
+        if (scrollBtn) scrollBtn.setAttribute('inert', '');
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => {
+            if (modal.classList.contains('active') && btnClose) {
+                btnClose.focus();
+            }
+        }, 100);
+    };
+
+    const close = () => {
+        modal.classList.remove('active');
+        backdrop.classList.remove('active');
+        const container = document.querySelector('.container');
+        const scrollBtn = document.getElementById('scrollToTopBtn');
+        if (container) container.removeAttribute('inert');
+        if (scrollBtn) scrollBtn.removeAttribute('inert');
+        if (returnFocus && typeof returnFocus.focus === 'function') {
+            try { returnFocus.focus(); } catch (e) { /* detached */ }
+        }
+        returnFocus = null;
+        modal.setAttribute('aria-hidden', 'true');
+        backdrop.setAttribute('aria-hidden', 'true');
+        modal.setAttribute('inert', '');
+        backdrop.setAttribute('inert', '');
+        document.body.style.overflow = '';
+    };
+
+    btnOpen.addEventListener('click', open);
+    if (btnClose) btnClose.addEventListener('click', close);
+    backdrop.addEventListener('click', close);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            close();
+        }
+    });
+
+    // Reset-to-defaults button. Does NOT clear favorites/cooldowns/history
+    // — only the look-and-feel / behaviour settings. Keeps the blast
+    // radius small; a full factory reset can come later in the Data
+    // section.
+    if (btnReset) {
+        btnReset.addEventListener('click', () => {
+            if (!confirm('Reset all settings to their defaults? Your favorites and history will be kept.')) {
+                return;
+            }
+            state.settings = mergeSettings({});
+            saveState();
+            applySettings();
+            showToast('Settings reset to defaults', 'info');
+        });
+    }
 }
 
