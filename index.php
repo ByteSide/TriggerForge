@@ -17,6 +17,9 @@ $config = file_exists($configPath) ? @require $configPath : [];
 if (!is_array($config)) {
     $config = [];
 }
+
+// HTML render helpers (button / category markup).
+require __DIR__ . '/lib/render.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -139,15 +142,7 @@ if (!is_array($config)) {
                         }
                         $usedCategoryIds[] = $categoryId;
                     ?>
-                    <section class="category-section">
-                        <div class="category-header" data-category-id="<?php echo htmlspecialchars($categoryId); ?>" role="button" tabindex="0" aria-expanded="true">
-                            <i class='bx bx-folder category-header-icon'></i>
-                            <h2 class="category-title"><?php echo htmlspecialchars($categoryNameStr); ?></h2>
-                            <i class='bx bx-chevron-down category-icon'></i>
-                        </div>
-
-                        <div class="category-content" data-category-id="<?php echo htmlspecialchars($categoryId); ?>">
-                            <div class="button-grid">
+                    <?php tf_render_category_open($categoryId, $categoryNameStr); ?>
                                 <?php
                                     $usedItemIds = [];
                                     $itemOffset = 0;
@@ -200,71 +195,14 @@ if (!is_array($config)) {
                                             $usedItemIds[] = $safeIndex;
                                             $itemId = $categoryId . '-' . $safeIndex;
                                         }
-                                        $itemName = (string)($item['name'] ?? '');
-                                        $itemDesc = (string)($item['description'] ?? $itemName);
                                     ?>
-
                                     <?php if ($type === 'webhook'): ?>
-                                        <!-- Webhook Button -->
-                                        <button
-                                            type="button"
-                                            class="trigger-btn"
-                                            data-type="webhook"
-                                            data-webhook-id="<?php echo htmlspecialchars($itemId); ?>"
-                                            data-webhook-url-prod="<?php echo htmlspecialchars((string)($item['webhook_url_prod'] ?? '')); ?>"
-                                            data-webhook-url-test="<?php echo htmlspecialchars((string)($item['webhook_url_test'] ?? '')); ?>"
-                                            data-webhook-name="<?php echo htmlspecialchars($itemName); ?>"
-                                            data-category="<?php echo htmlspecialchars($categoryNameStr); ?>"
-                                            title="<?php echo htmlspecialchars($itemDesc); ?>"
-                                            aria-label="<?php echo htmlspecialchars($itemName); ?>"
-                                        >
-                                            <span class="trigger-btn-cooldown" aria-hidden="true"></span>
-                                            <i class='bx bx-bolt trigger-btn-icon'></i>
-                                            <span class="trigger-btn-text"><?php echo htmlspecialchars($itemName); ?></span>
-                                            <i class='bx bx-star trigger-btn-favorite' data-webhook-id="<?php echo htmlspecialchars($itemId); ?>" title="Add to favorites"></i>
-                                        </button>
-
+                                        <?php tf_render_webhook_button($item, $itemId, $categoryNameStr); ?>
                                     <?php elseif ($type === 'link'): ?>
-                                        <!-- Custom Link Button -->
-                                        <?php
-                                            $itemUrl = (string)($item['url'] ?? '');
-                                            // Generate favicon URL (guard against malformed URLs / missing host)
-                                            $domain = $itemUrl !== '' ? parse_url($itemUrl, PHP_URL_HOST) : null;
-                                            $faviconUrl = $domain
-                                                ? 'https://www.google.com/s2/favicons?domain=' . urlencode($domain) . '&sz=32'
-                                                : '';
-                                        ?>
-                                        <button
-                                            type="button"
-                                            class="custom-link-btn"
-                                            data-type="link"
-                                            data-link-id="<?php echo htmlspecialchars($itemId); ?>"
-                                            data-link-url="<?php echo htmlspecialchars($itemUrl); ?>"
-                                            data-link-name="<?php echo htmlspecialchars($itemName); ?>"
-                                            data-category="<?php echo htmlspecialchars($categoryNameStr); ?>"
-                                            title="<?php echo htmlspecialchars($itemDesc); ?>"
-                                            aria-label="<?php echo htmlspecialchars($itemName); ?>"
-                                        >
-                                            <?php if ($faviconUrl !== ''): ?>
-                                                <img src="<?php echo htmlspecialchars($faviconUrl); ?>"
-                                                     alt=""
-                                                     loading="lazy"
-                                                     decoding="async"
-                                                     class="link-btn-favicon">
-                                                <i class='bx bx-link-alt link-btn-icon-fallback' style="display:none;"></i>
-                                            <?php else: ?>
-                                                <i class='bx bx-link-alt link-btn-icon-fallback'></i>
-                                            <?php endif; ?>
-                                            <span class="link-btn-text"><?php echo htmlspecialchars($itemName); ?></span>
-                                            <i class='bx bx-link-alt link-btn-indicator'></i>
-                                            <i class='bx bx-star link-btn-favorite' data-link-id="<?php echo htmlspecialchars($itemId); ?>" title="Add to favorites"></i>
-                                        </button>
+                                        <?php tf_render_link_button($item, $itemId, $categoryNameStr); ?>
                                     <?php endif; ?>
-                                    
                                 <?php endforeach; ?>
-                            </div>
-                        </div>
-                    </section>
+                    <?php tf_render_category_close(); ?>
                 <?php endforeach; ?>
             <?php endif; ?>
         </main>
