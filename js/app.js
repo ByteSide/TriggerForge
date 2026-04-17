@@ -153,6 +153,7 @@ function initTriggerForge() {
     initConfirmationModal();
     initSettings();
     initSearch();
+    initKeyboardShortcuts();
     initScrollToTop();
 
     // Restore cooldowns from previous session
@@ -1295,6 +1296,71 @@ function initSearch() {
             e.preventDefault();
             input.focus();
             input.select();
+        }
+    });
+}
+
+// === Keyboard Shortcuts ===
+// Global keyboard shortcuts. `/` and Ctrl+K are handled in initSearch —
+// keep them there. Everything else lives here so the surface area of
+// initSearch stays narrow.
+//
+// Active shortcuts:
+//   1..9    Fire favorite N (runs through the normal confirm flow for
+//           webhook items; opens links directly).
+//   t       Toggle TEST / PROD mode.
+//
+// Shortcuts are skipped while the user is typing in an input, textarea,
+// select, contenteditable or inside a modal with focus (Escape is the
+// standard way out).
+function initKeyboardShortcuts() {
+    document.addEventListener('keydown', (e) => {
+        if (e.defaultPrevented) return;
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+        const target = document.activeElement;
+        const inField = target && (
+            ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) ||
+            target.isContentEditable
+        );
+        if (inField) return;
+
+        // Don't hijack keys while a modal is open — the user is in a
+        // blocking dialog and ESC / button clicks are the intended exits.
+        const anyModalOpen = document.querySelector(
+            '.confirmation-modal.active, .settings-modal.active'
+        );
+        if (anyModalOpen) return;
+
+        // Number keys 1-9 → fire favorite at that slot.
+        if (e.key >= '1' && e.key <= '9') {
+            const idx = parseInt(e.key, 10) - 1;
+            const fav = state.favorites[idx];
+            if (!fav) return;
+            e.preventDefault();
+            if (fav.type === 'webhook') {
+                const btn = document.querySelector(
+                    `.trigger-btn[data-webhook-id="${CSS.escape(fav.id)}"]`
+                );
+                if (btn) triggerWebhook(btn);
+            } else if (fav.type === 'link') {
+                const btn = document.querySelector(
+                    `.custom-link-btn[data-link-id="${CSS.escape(fav.id)}"]`
+                );
+                if (btn) openCustomLink(btn);
+            }
+            return;
+        }
+
+        // `t` toggles TEST / PROD mode via the existing checkbox so the
+        // change event fires and the toast + persistence run as usual.
+        if (e.key === 't' || e.key === 'T') {
+            const toggle = document.getElementById('modeToggleCheckbox');
+            if (toggle) {
+                e.preventDefault();
+                toggle.checked = !toggle.checked;
+                toggle.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         }
     });
 }
