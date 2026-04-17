@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://byteside.io/triggerforge/config.schema.json",
+  "title": "TriggerForge Config",
+  "description": "Shape of config/config.php once the 'return [...]' array is loaded. PHP ingests this as a nested associative array; the same structure serialised to JSON matches this schema. Used by the CLI validator, the (upcoming) web config editor, and IDEs for autocomplete.",
+  "type": "object",
+  "additionalProperties": {
+    "description": "Each top-level key is the display name of a category. The value is an array of item entries that appear in that category's accordion section.",
+    "type": "array",
+    "items": {
+      "oneOf": [
+        { "$ref": "#/$defs/webhookItem" },
+        { "$ref": "#/$defs/linkItem" },
+        { "$ref": "#/$defs/chainItem" }
+      ]
+    }
+  },
+  "$defs": {
+    "itemId": {
+      "description": "Optional stable identifier. Recommended for production configs so favourites and cooldowns survive reordering. Allowed characters: A-Z, a-z, 0-9, _, -. Omit to fall back to the positional {categoryId}-{index} scheme.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "iconName": {
+      "description": "Boxicons class name (https://boxicons.com/). Default 'bx-bolt' for webhooks, 'bx-link-alt' for links. Must be a single class token.",
+      "type": "string",
+      "pattern": "^bx[a-z-]+[a-z0-9-]*$"
+    },
+    "httpMethod": {
+      "type": "string",
+      "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    },
+    "httpHeaders": {
+      "description": "Extra request headers. Keys are header names, values are strings. Host/Content-Length are managed by cURL and will be overridden.",
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "webhookItem": {
+      "type": "object",
+      "required": ["name", "webhook_url_test", "webhook_url_prod"],
+      "properties": {
+        "type": { "const": "webhook" },
+        "id": { "$ref": "#/$defs/itemId" },
+        "name": {
+          "description": "Button label shown in the UI.",
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "description": "Tooltip text (rendered as the button's title and aria-label).",
+          "type": "string"
+        },
+        "webhook_url_test": {
+          "description": "URL to POST when TEST mode is active.",
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://"
+        },
+        "webhook_url_prod": {
+          "description": "URL to POST when PROD mode is active.",
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://"
+        },
+        "icon": { "$ref": "#/$defs/iconName" },
+        "cooldown": {
+          "description": "Per-webhook cooldown duration in milliseconds. Overrides the global 10 000 ms default. 0 disables the cooldown for this button.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3600000
+        },
+        "confirm": {
+          "description": "Whether the confirmation modal is shown before firing. Default: true. Set false for low-risk webhooks where the extra click is annoying.",
+          "type": "boolean"
+        },
+        "payload": {
+          "description": "Custom JSON payload merged with the default body {triggered_at, source, triggered_by}. Config values win on key collision. Must NOT contain untrusted user input.",
+          "type": "object"
+        },
+        "method": { "$ref": "#/$defs/httpMethod" },
+        "headers": { "$ref": "#/$defs/httpHeaders" },
+        "undo_url": {
+          "description": "Optional URL called when the user clicks 'Undo' on the success toast. Only shown when set.",
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https?://"
+        }
+      },
+      "additionalProperties": false
+    },
+    "linkItem": {
+      "type": "object",
+      "required": ["type", "name", "url"],
+      "properties": {
+        "type": { "const": "link" },
+        "id": { "$ref": "#/$defs/itemId" },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "description": { "type": "string" },
+        "url": {
+          "description": "External URL opened in a new tab. Only http/https/mailto/tel protocols are executed client-side.",
+          "type": "string",
+          "format": "uri"
+        },
+        "icon": { "$ref": "#/$defs/iconName" }
+      },
+      "additionalProperties": false
+    },
+    "chainItem": {
+      "description": "Planned type: runs a sequence of other webhook items with optional delays between steps. Not yet implemented — reserved for future use.",
+      "type": "object",
+      "required": ["type", "name", "steps"],
+      "properties": {
+        "type": { "const": "chain" },
+        "id": { "$ref": "#/$defs/itemId" },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "icon": { "$ref": "#/$defs/iconName" },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["ref"],
+            "properties": {
+              "ref": {
+                "description": "Item id of the target webhook (must match an existing 'id').",
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_-]+$"
+              },
+              "delayMs": {
+                "description": "Milliseconds to wait AFTER this step completes, before firing the next step.",
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 600000
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
