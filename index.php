@@ -428,6 +428,17 @@ require __DIR__ . '/lib/render.php';
 
                 <div class="settings-section">
                     <h4 class="settings-section-title">Data</h4>
+                    <div class="settings-action-row">
+                        <a href="api/export.php" class="settings-action-btn" download>
+                            <i class='bx bx-download' aria-hidden="true"></i>
+                            <span>Export config</span>
+                        </a>
+                        <button type="button" class="settings-action-btn" id="settingsImportBtn">
+                            <i class='bx bx-upload' aria-hidden="true"></i>
+                            <span>Import config</span>
+                        </button>
+                        <input type="file" id="settingsImportFile" accept="application/json,.json" hidden>
+                    </div>
                     <button type="button" class="settings-action-btn" id="settingsResetBtn">
                         <i class='bx bx-reset' aria-hidden="true"></i>
                         <span>Reset settings to defaults</span>

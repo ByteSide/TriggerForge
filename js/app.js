@@ -2034,6 +2034,82 @@ function initSettings() {
             showToast('Settings reset to defaults', 'info');
         });
     }
+
+    // Import: file picker → read JSON → POST to api/import.php → reload
+    // on success, show validator errors in a modal on 422.
+    const btnImport = document.getElementById('settingsImportBtn');
+    const inputImport = document.getElementById('settingsImportFile');
+    if (btnImport && inputImport) {
+        btnImport.addEventListener('click', () => inputImport.click());
+        inputImport.addEventListener('change', () => {
+            const file = inputImport.files && inputImport.files[0];
+            // Reset now so picking the same file twice in a row still
+            // fires the change event.
+            inputImport.value = '';
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onerror = () => showToast('Could not read file', 'error');
+            reader.onload = () => {
+                let parsed;
+                try { parsed = JSON.parse(String(reader.result || '')); }
+                catch (err) { showToast('Invalid JSON: ' + err.message, 'error'); return; }
+                if (!confirm('Replace current config with the contents of "' + file.name + '"?\n\nThe current config will be backed up automatically.')) {
+                    return;
+                }
+                submitConfigImport(parsed);
+            };
+            reader.readAsText(file);
+        });
+    }
+}
+
+/**
+ * POST the parsed JSON config to api/import.php. On success reload the
+ * page so PHP re-renders buttons from the fresh config. On 422 open the
+ * validator errors in a modal.
+ */
+function submitConfigImport(payload) {
+    fetch('api/import.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+    .then(async (response) => {
+        let data = {};
+        try { data = await response.json(); } catch (e) { /* non-JSON */ }
+        if (response.ok && data.success) {
+            showToast('Config imported — reloading', 'success');
+            setTimeout(() => window.location.reload(), 800);
+            return;
+        }
+        if (response.status === 422 && Array.isArray(data.errors) && data.errors.length) {
+            _showImportErrorsModal(data.errors);
+            return;
+        }
+        const msg = (data && data.message) ? data.message : ('HTTP ' + response.status);
+        showToast('Import failed: ' + msg, 'error');
+    })
+    .catch((err) => {
+        showToast('Import request failed: ' + err.message, 'error');
+    });
+}
+
+function _showImportErrorsModal(errors) {
+    const ul = document.createElement('ul');
+    ul.style.margin = '0';
+    ul.style.paddingLeft = '1.25em';
+    errors.forEach((msg) => {
+        const li = document.createElement('li');
+        li.textContent = String(msg);
+        li.style.marginBottom = '4px';
+        ul.appendChild(li);
+    });
+    openModal({
+        title: 'Import validation failed',
+        icon: 'bx-error-circle',
+        bodyEl: ul,
+        actions: [{ label: 'Close', variant: 'default', icon: 'bx-x' }]
+    });
 }
 
 /**

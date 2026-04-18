@@ -2,6 +2,7 @@
 
 # Sensitive configuration files
 config/config.php
+config/backups/
 .htaccess
 .htpasswd
 .env

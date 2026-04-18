@@ -3135,12 +3135,25 @@ body[data-layout="list"] .custom-link-btn {
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     color: var(--text-primary);
+    text-decoration: none;
     font-family: inherit;
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
     transition: all var(--transition-fast);
     touch-action: manipulation;
+}
+
+.settings-action-row {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.settings-action-row .settings-action-btn {
+    flex: 1 1 auto;
+    min-width: 140px;
+    justify-content: center;
 }
 
 .settings-action-btn i {
