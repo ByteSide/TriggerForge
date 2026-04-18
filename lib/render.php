@@ -17,6 +17,19 @@ if (!function_exists('tf_e')) {
     }
 }
 
+if (!function_exists('tf_icon')) {
+    /**
+     * Resolve a Boxicons class name to a safe token. Only characters from
+     * the Boxicons naming convention (`bx-foo`, `bxs-bar`) are accepted;
+     * anything else falls back to $default. Prevents config typos from
+     * injecting unrelated CSS classes into the icon slot.
+     */
+    function tf_icon($value, $default = 'bx-bolt') {
+        if (!is_string($value)) return $default;
+        return preg_match('/^bx[a-z]*-[a-z0-9-]+$/', $value) ? $value : $default;
+    }
+}
+
 /**
  * Emit the opening markup for one category section: section > header > content > grid.
  * Must be paired with tf_render_category_close().
@@ -81,7 +94,7 @@ function tf_render_webhook_button(array $item, $itemId, $categoryName) {
                                         aria-label="<?php echo tf_e($itemName); ?>"
                                     >
                                         <span class="trigger-btn-cooldown" aria-hidden="true"></span>
-                                        <i class='bx bx-bolt trigger-btn-icon'></i>
+                                        <i class='bx <?php echo tf_e(tf_icon($item['icon'] ?? null, 'bx-bolt')); ?> trigger-btn-icon'></i>
                                         <span class="trigger-btn-text"><?php echo tf_e($itemName); ?></span>
                                         <i class='bx bx-star trigger-btn-favorite' data-webhook-id="<?php echo tf_e($itemId); ?>" title="Add to favorites"></i>
                                     </button>
@@ -113,7 +126,15 @@ function tf_render_link_button(array $item, $itemId, $categoryName) {
                                         title="<?php echo tf_e($itemDesc); ?>"
                                         aria-label="<?php echo tf_e($itemName); ?>"
                                     >
-                                        <?php if ($faviconUrl !== ''): ?>
+                                        <?php
+                                            // Explicit icon in config overrides the auto-fetched
+                                            // favicon. Lets users who don't want a Google pingback
+                                            // pin their own Boxicon and bypass the favicon service.
+                                            $customIcon = isset($item['icon']) ? tf_icon($item['icon'], '') : '';
+                                        ?>
+                                        <?php if ($customIcon !== ''): ?>
+                                            <i class='bx <?php echo tf_e($customIcon); ?> link-btn-icon-fallback'></i>
+                                        <?php elseif ($faviconUrl !== ''): ?>
                                             <img src="<?php echo tf_e($faviconUrl); ?>"
                                                  alt=""
                                                  loading="lazy"

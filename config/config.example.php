@@ -17,6 +17,16 @@
  *                                              // "category-3" which changes
  *                                              // when you add/remove items.
  *     'name' => 'Button Label',
+ *     'icon' => 'bx-envelope',                 // optional. Any Boxicon class
+ *                                              // name (https://boxicons.com/).
+ *                                              // Default 'bx-bolt'.
+ *     'cooldown' => 60000,                     // optional. Milliseconds after
+ *                                              // firing before this button is
+ *                                              // clickable again. 0 disables.
+ *                                              // Default: 10000 (global).
+ *     'confirm' => false,                      // optional. Skip the "Ready to
+ *                                              // fire?" modal for low-risk
+ *                                              // endpoints. Default: true.
  *     'webhook_url_test' => 'https://your-automation.com/webhook-test/unique-id',
  *     'webhook_url_prod' => 'https://your-automation.com/webhook/unique-id',
  *     'description' => 'Optional: What this webhook does'
@@ -27,6 +37,11 @@
  *     'type' => 'link',
  *     'id'   => 'dashboard',                   // optional, same semantics as above
  *     'name' => 'Link Label',
+ *     'icon' => 'bx-folder-open',              // optional. Overrides the
+ *                                              // auto-fetched favicon with a
+ *                                              // Boxicon. Useful when you
+ *                                              // don't want the Google
+ *                                              // favicon service pinged.
  *     'url' => 'https://example.com/page',
  *     'description' => 'Optional: Description of the link'
  * ]
