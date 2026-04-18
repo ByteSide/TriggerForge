@@ -428,6 +428,10 @@ require __DIR__ . '/lib/render.php';
 
                 <div class="settings-section">
                     <h4 class="settings-section-title">Data</h4>
+                    <a href="admin.php" class="settings-action-btn">
+                        <i class='bx bx-edit' aria-hidden="true"></i>
+                        <span>Open config editor</span>
+                    </a>
                     <div class="settings-action-row">
                         <a href="api/export.php" class="settings-action-btn" download>
                             <i class='bx bx-download' aria-hidden="true"></i>
