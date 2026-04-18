@@ -354,6 +354,36 @@ body {
     margin-bottom: var(--space-3);
 }
 
+.favorites-toggle {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all var(--transition-fast);
+}
+
+@media (hover: hover) {
+    .favorites-toggle:hover {
+        border-color: var(--border-glass);
+        color: var(--text-primary);
+    }
+}
+
+.favorites-bar.collapsed .favorites-scroll {
+    display: none;
+}
+
+.favorites-bar.collapsed .favorites-header {
+    margin-bottom: 0;
+}
+
 .favorites-title {
     font-size: 0.875rem;
     font-weight: 600;

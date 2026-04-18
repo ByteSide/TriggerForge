@@ -166,6 +166,9 @@ $appBgImage = (isset($appMeta['background_image']) && is_string($appMeta['backgr
             <div class="favorites-bar" id="favoritesBar">
                 <div class="favorites-header">
                     <span class="favorites-title"><i class='bx bx-star'></i> Quick Actions</span>
+                    <button type="button" class="favorites-toggle" id="favoritesToggle" aria-expanded="true" aria-label="Toggle favorites bar" title="Collapse / expand">
+                        <i class='bx bx-chevron-up' aria-hidden="true"></i>
+                    </button>
                 </div>
                 <div class="favorites-scroll" id="favoritesScroll">
                     <div class="favorites-empty" id="favoritesEmpty">

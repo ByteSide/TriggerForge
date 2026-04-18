@@ -289,6 +289,7 @@ function initTriggerForge() {
     initChainButtons();
     initHistory();
     initBulkFire();
+    initFavoritesCollapse();
     initScrollToTop();
     initServiceWorker();
     initPullToRefresh();
@@ -947,6 +948,28 @@ function executeChain(chainBtn, chainName, steps) {
         advance();
     };
     runStep();
+}
+
+// === Favorites bar collapse ===
+function initFavoritesCollapse() {
+    const bar = document.getElementById('favoritesBar');
+    const btn = document.getElementById('favoritesToggle');
+    if (!bar || !btn) return;
+
+    const apply = () => {
+        const collapsed = !!state.settings.favoritesCollapsed;
+        bar.classList.toggle('collapsed', collapsed);
+        btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        const icon = btn.querySelector('i');
+        if (icon) icon.className = collapsed ? 'bx bx-chevron-down' : 'bx bx-chevron-up';
+    };
+    apply();
+
+    btn.addEventListener('click', () => {
+        state.settings.favoritesCollapsed = !state.settings.favoritesCollapsed;
+        saveState();
+        apply();
+    });
 }
 
 // === Bulk Fire ===
