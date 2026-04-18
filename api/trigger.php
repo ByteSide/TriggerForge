@@ -194,7 +194,11 @@ curl_setopt_array($ch, $protocolOpts + [
         // guess local vs. UTC. We default to UTC (top of file), so the
         // result looks like "2024-01-15T10:30:00+00:00".
         'triggered_at' => date('c'),
-        'source' => 'TriggerForge'
+        'source' => 'TriggerForge',
+        // Passes the HTTP Basic Auth username through so upstream audit
+        // logs can attribute each fire. 'anonymous' in local dev where
+        // Apache's .htaccess isn't evaluated.
+        'triggered_by' => $_SERVER['PHP_AUTH_USER'] ?? 'anonymous'
     ]),
     CURLOPT_WRITEFUNCTION => function ($ch, $data) use (&$bytesReceived, $maxResponseBytes) {
         $bytesReceived += strlen($data);
