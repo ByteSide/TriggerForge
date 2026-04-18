@@ -33,6 +33,13 @@
  *                                              // triggered_at / source /
  *                                              // triggered_by. Config values
  *                                              // win on key collision.
+ *     'method' => 'PUT',                       // optional. HTTP method used.
+ *                                              // One of GET/POST/PUT/PATCH/
+ *                                              // DELETE. Default: POST.
+ *     'headers' => [                           // optional. Extra headers
+ *         'Authorization' => 'Bearer XYZ',     // merged with default
+ *         'X-Source' => 'dashboard',           // User-Agent/Content-Type.
+ *     ],                                       // Host/Content-Length blocked.
  *     'webhook_url_test' => 'https://your-automation.com/webhook-test/unique-id',
  *     'webhook_url_prod' => 'https://your-automation.com/webhook/unique-id',
  *     'description' => 'Optional: What this webhook does'

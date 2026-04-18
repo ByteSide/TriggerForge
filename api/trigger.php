@@ -168,6 +168,51 @@ function tf_build_payload(array $item) {
     return $base;
 }
 
+/**
+ * Resolve the HTTP method for a config item. Whitelisted to prevent an
+ * operator typo (`'method' => 'CONNECT'`) from producing strange cURL
+ * behaviour. Anything else falls back to POST.
+ */
+function tf_resolve_method(array $item) {
+    if (!isset($item['method']) || !is_string($item['method'])) return 'POST';
+    $m = strtoupper(trim($item['method']));
+    return in_array($m, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'], true) ? $m : 'POST';
+}
+
+/**
+ * Build the CURLOPT_HTTPHEADER array for a matched config item. Starts
+ * with the project defaults (User-Agent + Content-Type for body-bearing
+ * methods), then layers per-item 'headers' on top. User-provided
+ * headers overwrite defaults of the same name. Host / Content-Length
+ * are always dropped — cURL manages them.
+ */
+function tf_build_headers(array $item, $method) {
+    $defaults = ['User-Agent: TriggerForge/1.0'];
+    if ($method !== 'GET') {
+        $defaults[] = 'Content-Type: application/json';
+    }
+    if (!isset($item['headers']) || !is_array($item['headers'])) {
+        return $defaults;
+    }
+    $blocked = ['host', 'content-length'];
+    $result = $defaults;
+    foreach ($item['headers'] as $name => $value) {
+        if (!is_string($name) || !is_string($value)) continue;
+        $trimmedName = trim($name);
+        if ($trimmedName === '') continue;
+        $lname = strtolower($trimmedName);
+        if (in_array($lname, $blocked, true)) continue;
+        // Drop any default with the same header name so the user's
+        // override takes effect instead of stacking two copies.
+        $result = array_values(array_filter($result, function ($h) use ($lname) {
+            $pos = strpos($h, ':');
+            return $pos === false || strtolower(trim(substr($h, 0, $pos))) !== $lname;
+        }));
+        $result[] = $trimmedName . ': ' . trim($value);
+    }
+    return $result;
+}
+
 // Send cURL request to webhook
 $ch = curl_init($webhookUrl);
 if ($ch === false) {
@@ -200,7 +245,28 @@ $bytesReceived = 0;
 $responseBody = '';
 $responseHeaders = [];
 
-curl_setopt_array($ch, $protocolOpts + [
+// Resolve per-item overrides (HTTP method + headers). GET bodies are
+// allowed by the spec but nonsensical for webhooks — we skip the body
+// entirely for GET so we don't send a Content-Length + JSON envelope
+// an upstream likely doesn't parse.
+$method = tf_resolve_method($matchedItem);
+$httpHeaders = tf_build_headers($matchedItem, $method);
+$postBody = $method === 'GET' ? null : json_encode(tf_build_payload($matchedItem));
+
+$methodOpts = [];
+if ($method === 'POST') {
+    $methodOpts[CURLOPT_POST] = true;
+    $methodOpts[CURLOPT_POSTFIELDS] = $postBody;
+} elseif ($method !== 'GET') {
+    // PUT / PATCH / DELETE
+    $methodOpts[CURLOPT_CUSTOMREQUEST] = $method;
+    $methodOpts[CURLOPT_POSTFIELDS] = $postBody;
+} else {
+    // GET — explicit just to overwrite any default POST behaviour.
+    $methodOpts[CURLOPT_CUSTOMREQUEST] = 'GET';
+}
+
+curl_setopt_array($ch, $protocolOpts + $methodOpts + [
     // No CURLOPT_RETURNTRANSFER: CURLOPT_WRITEFUNCTION drives the body
     // handling instead, counting bytes and aborting on overflow.
     // Don't follow redirects. A compromised or misconfigured webhook
@@ -210,12 +276,7 @@ curl_setopt_array($ch, $protocolOpts + [
     CURLOPT_FOLLOWLOCATION => false,
     CURLOPT_CONNECTTIMEOUT => 10,
     CURLOPT_TIMEOUT => 30,
-    CURLOPT_POST => true,
-    CURLOPT_HTTPHEADER => [
-        'Content-Type: application/json',
-        'User-Agent: TriggerForge/1.0'
-    ],
-    CURLOPT_POSTFIELDS => json_encode(tf_build_payload($matchedItem)),
+    CURLOPT_HTTPHEADER => $httpHeaders,
     CURLOPT_WRITEFUNCTION => function ($ch, $data) use (&$bytesReceived, &$responseBody, $maxResponseBytes) {
         $bytesReceived += strlen($data);
         if ($bytesReceived > $maxResponseBytes) {
