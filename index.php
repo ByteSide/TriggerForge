@@ -537,6 +537,10 @@ $appBgImage = (isset($appMeta['background_image']) && is_string($appMeta['backgr
         </div>
     </div>
 
+    <!-- Hover preview card — populated and positioned by initHoverPreview()
+         when the pointer dwells on a trigger-btn on a hover-capable device. -->
+    <aside class="trigger-preview" id="triggerPreview" aria-hidden="true" role="tooltip"></aside>
+
     <!-- Pull-to-refresh indicator — fixed top-center, visible during pull. -->
     <div class="ptr-indicator" id="ptrIndicator" aria-hidden="true">
         <i class='bx bx-refresh' aria-hidden="true"></i>

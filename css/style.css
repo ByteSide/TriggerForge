@@ -2323,6 +2323,65 @@ body.test-mode .confirmation-modal {
     cursor: not-allowed;
 }
 
+/* === Hover Preview Card (desktop only) === */
+.trigger-preview {
+    position: absolute;
+    z-index: 9000;
+    width: 320px;
+    max-width: calc(100vw - 16px);
+    padding: var(--space-3) var(--space-4);
+    background: var(--glass-bg-hover);
+    backdrop-filter: var(--glass-blur-strong);
+    -webkit-backdrop-filter: var(--glass-blur-strong);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg), var(--glow-primary);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-fast);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+.trigger-preview.active {
+    opacity: 1;
+}
+
+.trigger-preview .preview-title {
+    font-weight: 700;
+    margin-bottom: var(--space-1);
+    overflow-wrap: anywhere;
+}
+
+.trigger-preview .preview-desc {
+    margin: 0 0 var(--space-3) 0;
+    color: var(--text-secondary);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+}
+
+.trigger-preview .preview-meta {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 2px var(--space-2);
+    font-size: 0.75rem;
+}
+
+.trigger-preview .preview-meta dt {
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.trigger-preview .preview-meta dd {
+    color: var(--text-primary);
+    margin: 0;
+    overflow-wrap: anywhere;
+    font-family: 'JetBrains Mono', monospace;
+}
+
 /* === Pull-to-Refresh Indicator === */
 .ptr-indicator {
     position: fixed;

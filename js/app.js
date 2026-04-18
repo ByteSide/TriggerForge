@@ -290,6 +290,7 @@ function initTriggerForge() {
     initHistory();
     initBulkFire();
     initFavoritesCollapse();
+    initHoverPreview();
     initScrollToTop();
     initServiceWorker();
     initPullToRefresh();
@@ -948,6 +949,100 @@ function executeChain(chainBtn, chainName, steps) {
         advance();
     };
     runStep();
+}
+
+// === Secrets redaction ===
+// Best-effort masking for webhook URLs displayed to the user. Intended
+// for preview/history text — NOT as a real security boundary (the raw
+// URL still lives in data-* attributes).
+function redactSecretsInUrl(url) {
+    if (typeof url !== 'string' || url === '') return '';
+    // Long hex/base-62 tokens in path or query → keep first 3 + last 3
+    // chars, mask the middle. 16 chars is the lower bound most tokens
+    // hit; below that we leave as-is so ordinary path segments don't
+    // get redacted.
+    return url.replace(/([A-Za-z0-9_-]{16,})/g, (token) => {
+        return token.slice(0, 3) + '***' + token.slice(-3);
+    });
+}
+
+// === Hover preview card ===
+// Desktop only (pointer:fine + hover:hover). 500 ms dwell threshold on
+// a trigger-btn pops a tooltip-style card with name, description,
+// redacted URL, last-fired relative time, and total counter. Touch
+// devices skip init entirely.
+function initHoverPreview() {
+    const mq = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)');
+    if (!mq || !mq.matches) return;
+    const preview = document.getElementById('triggerPreview');
+    if (!preview) return;
+
+    const show = (btn) => {
+        const name = btn.getAttribute('data-webhook-name') || '';
+        const desc = btn.getAttribute('title') || '';
+        const urlProd = btn.getAttribute('data-webhook-url-prod') || '';
+        const urlTest = btn.getAttribute('data-webhook-url-test') || '';
+        const url = state.isTestMode ? urlTest : urlProd;
+        const id = btn.getAttribute('data-webhook-id') || '';
+        const ts = id && state.lastTriggered ? state.lastTriggered[id] : 0;
+        const count = id && state.triggerCounts ? (state.triggerCounts[id] || 0) : 0;
+
+        preview.innerHTML = '';
+        const title = document.createElement('div');
+        title.className = 'preview-title';
+        title.textContent = name;
+        preview.appendChild(title);
+
+        if (desc && desc !== name) {
+            const d = document.createElement('p');
+            d.className = 'preview-desc';
+            d.textContent = desc;
+            preview.appendChild(d);
+        }
+
+        const dl = document.createElement('dl');
+        dl.className = 'preview-meta';
+        const row = (key, value) => {
+            if (!value) return;
+            const dt = document.createElement('dt'); dt.textContent = key;
+            const dd = document.createElement('dd'); dd.textContent = value;
+            dl.appendChild(dt); dl.appendChild(dd);
+        };
+        row('URL', url ? redactSecretsInUrl(url) : '(none for ' + (state.isTestMode ? 'TEST' : 'PROD') + ' mode)');
+        if (typeof ts === 'number' && ts > 0) row('Last fired', formatRelativeTime(ts));
+        if (count > 0) row('Total fires', String(count));
+        preview.appendChild(dl);
+
+        // Position under the button. Keep within the viewport so the
+        // card doesn't clip on right-edge items.
+        const rect = btn.getBoundingClientRect();
+        const top = rect.bottom + window.scrollY + 8;
+        const desiredLeft = rect.left + window.scrollX;
+        const maxLeft = window.scrollX + window.innerWidth - 340;
+        preview.style.top = top + 'px';
+        preview.style.left = Math.max(window.scrollX + 8, Math.min(desiredLeft, maxLeft)) + 'px';
+        preview.classList.add('active');
+        preview.setAttribute('aria-hidden', 'false');
+    };
+
+    const hide = () => {
+        preview.classList.remove('active');
+        preview.setAttribute('aria-hidden', 'true');
+    };
+
+    document.querySelectorAll('.trigger-btn').forEach((btn) => {
+        let timer = null;
+        btn.addEventListener('mouseenter', () => {
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(() => show(btn), 500);
+        });
+        btn.addEventListener('mouseleave', () => {
+            if (timer) { clearTimeout(timer); timer = null; }
+            hide();
+        });
+    });
+    // Hide on scroll so the preview doesn't detach from its anchor.
+    window.addEventListener('scroll', hide, { passive: true });
 }
 
 // === Favorites bar collapse ===
