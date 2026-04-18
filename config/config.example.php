@@ -132,3 +132,102 @@ return [
     ]
 ];
 
+/* =========================================================================
+ * TEMPLATE GALLERY — copy a snippet above, replace the URL / text, uncomment.
+ * =========================================================================
+ *
+ * --- Slack Incoming Webhook ------------------------------------------------
+ * [
+ *     'type' => 'webhook',
+ *     'id'   => 'slack-deploy',
+ *     'name' => 'Post to #deploys',
+ *     'icon' => 'bxl-slack',
+ *     'webhook_url_test' => 'https://hooks.slack.com/services/T00/B00/TEST',
+ *     'webhook_url_prod' => 'https://hooks.slack.com/services/T00/B00/PROD',
+ *     'payload' => [
+ *         'text'    => ':rocket: Manual deploy triggered from TriggerForge',
+ *         'channel' => '#deploys',
+ *     ],
+ * ]
+ *
+ * --- Discord Webhook -------------------------------------------------------
+ * [
+ *     'type' => 'webhook',
+ *     'id'   => 'discord-ops',
+ *     'name' => 'Ping Ops channel',
+ *     'icon' => 'bxl-discord-alt',
+ *     'webhook_url_test' => 'https://discord.com/api/webhooks/.../testtoken',
+ *     'webhook_url_prod' => 'https://discord.com/api/webhooks/.../prodtoken',
+ *     'payload' => [
+ *         'content'  => 'Manual ping from TriggerForge',
+ *         'username' => 'TriggerForge',
+ *     ],
+ * ]
+ *
+ * --- Microsoft Teams Incoming Webhook --------------------------------------
+ * [
+ *     'type' => 'webhook',
+ *     'id'   => 'teams-alert',
+ *     'name' => 'Teams: Alert channel',
+ *     'icon' => 'bxl-microsoft-teams',
+ *     'webhook_url_test' => 'https://outlook.office.com/webhook/.../test',
+ *     'webhook_url_prod' => 'https://outlook.office.com/webhook/.../prod',
+ *     'payload' => [
+ *         '@type'    => 'MessageCard',
+ *         '@context' => 'http://schema.org/extensions',
+ *         'title'    => 'TriggerForge',
+ *         'text'     => 'Manual trigger fired',
+ *     ],
+ * ]
+ *
+ * --- IFTTT Maker Webhook ---------------------------------------------------
+ * [
+ *     'type' => 'webhook',
+ *     'id'   => 'ifttt-lights',
+ *     'name' => 'Living room lights',
+ *     'icon' => 'bx-bulb',
+ *     'webhook_url_test' => 'https://maker.ifttt.com/trigger/EVENT/with/key/TESTKEY',
+ *     'webhook_url_prod' => 'https://maker.ifttt.com/trigger/EVENT/with/key/PRODKEY',
+ *     'payload' => ['value1' => 'on'],
+ * ]
+ *
+ * --- Generic REST with auth ------------------------------------------------
+ * [
+ *     'type' => 'webhook',
+ *     'id'   => 'rest-create',
+ *     'name' => 'Create resource',
+ *     'method' => 'POST',
+ *     'headers' => [
+ *         'Authorization' => 'Bearer YOUR_TOKEN',
+ *         'Accept'        => 'application/json',
+ *     ],
+ *     'payload' => ['kind' => 'manual'],
+ *     'webhook_url_test' => 'https://api.example.com/v1/resource?env=test',
+ *     'webhook_url_prod' => 'https://api.example.com/v1/resource',
+ *     'cooldown' => 30000,
+ * ]
+ *
+ * --- Quick, no-confirm ping ------------------------------------------------
+ * [
+ *     'type' => 'webhook',
+ *     'id'   => 'status-ping',
+ *     'name' => 'Ping status endpoint',
+ *     'icon' => 'bx-pulse',
+ *     'confirm' => false,            // fires without "Ready to fire?" modal
+ *     'cooldown' => 0,               // no cooldown on rapid-fire pings
+ *     'webhook_url_test' => 'https://status.example.com/ping',
+ *     'webhook_url_prod' => 'https://status.example.com/ping',
+ * ]
+ *
+ * --- Zapier Catch Hook -----------------------------------------------------
+ * [
+ *     'type' => 'webhook',
+ *     'id'   => 'zapier-flow',
+ *     'name' => 'Start Zapier flow',
+ *     'icon' => 'bxl-zap',          // (or 'bx-zap')
+ *     'webhook_url_test' => 'https://hooks.zapier.com/hooks/catch/ACCT/TEST/',
+ *     'webhook_url_prod' => 'https://hooks.zapier.com/hooks/catch/ACCT/PROD/',
+ * ]
+ *
+ * =========================================================================
+ */
