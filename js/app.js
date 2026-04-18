@@ -13,7 +13,8 @@ const state = {
     lastTriggered: {},
     triggerCounts: {},
     itemOrder: {}, // per-category arrays of item ids, produced by drag-sort
-    history: []    // newest-first ring buffer of the last MAX_HISTORY fires
+    history: [],   // newest-first ring buffer of the last MAX_HISTORY fires
+    offlineQueue: [] // pending fires captured while offline
 };
 
 // === Constants ===
@@ -291,6 +292,7 @@ function initTriggerForge() {
     initScrollToTop();
     initServiceWorker();
     initPullToRefresh();
+    initOfflineQueue();
 
     // Restore cooldowns from previous session
     restoreCooldowns();
@@ -370,6 +372,11 @@ function loadState() {
         // around forever.
         state.history.length = MAX_HISTORY;
     }
+    state.offlineQueue = loadStateKey(
+        'triggerforge_offline_queue',
+        [],
+        v => Array.isArray(v)
+    );
 }
 
 function saveState() {
@@ -384,7 +391,8 @@ function saveState() {
         ['triggerforge_last_triggered', state.lastTriggered],
         ['triggerforge_trigger_counts', state.triggerCounts],
         ['triggerforge_item_order', state.itemOrder],
-        ['triggerforge_history', state.history]
+        ['triggerforge_history', state.history],
+        ['triggerforge_offline_queue', state.offlineQueue]
     ];
     writes.forEach(([key, value]) => {
         try {
@@ -1249,15 +1257,102 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
         // Connection error
         button.classList.remove('loading');
         if (icon) icon.className = originalIconClass;
+        const durationMs = Date.now() - startedAt;
+
+        // Offline-queue the fire when the feature's on and we're
+        // actually offline. Abort-timeout (40 s) stays an error — the
+        // request already hit the server (or tried to) past the point
+        // where re-sending blindly would be safe.
+        if (state.settings.enableOfflineQueue && !navigator.onLine && error.name !== 'AbortError') {
+            enqueueOfflineFire(webhookUrl, webhookName);
+            showToast('📶 ' + webhookName + ' queued — will fire when online', 'info');
+            button.disabled = false;
+            return;
+        }
+
         const msg = error.name === 'AbortError'
             ? 'Request timed out'
             : 'Connection error: ' + error.message;
-        const durationMs = Date.now() - startedAt;
         // No server payload on a network failure — synthesise a minimal
         // one so the history row still records the attempt + duration.
         handleError(button, msg, { http_code: 0, response_body: '', response_headers: {} }, durationMs);
         button.disabled = false;
     });
+}
+
+// === Offline Queue ===
+// Fires attempted while offline get stashed in state.offlineQueue; on
+// the next `online` event (or boot while online) we drain them through
+// the normal api/trigger.php path.
+const MAX_OFFLINE_QUEUE = 100;
+
+function enqueueOfflineFire(url, name) {
+    if (!Array.isArray(state.offlineQueue)) state.offlineQueue = [];
+    state.offlineQueue.push({ url: url, name: name, ts: Date.now() });
+    while (state.offlineQueue.length > MAX_OFFLINE_QUEUE) {
+        state.offlineQueue.shift();
+    }
+    saveState();
+}
+
+function initOfflineQueue() {
+    window.addEventListener('online', () => { drainOfflineQueue(); });
+    // If we come back online (or refresh while online) with pending
+    // items, drain after a short delay so the rest of boot finishes
+    // first.
+    if (navigator.onLine && Array.isArray(state.offlineQueue) && state.offlineQueue.length > 0) {
+        setTimeout(drainOfflineQueue, 1500);
+    }
+}
+
+function drainOfflineQueue() {
+    if (!navigator.onLine) return;
+    if (!Array.isArray(state.offlineQueue) || state.offlineQueue.length === 0) return;
+    if (!state.settings.enableOfflineQueue) return; // user disabled — don't auto-drain
+
+    // Snapshot — process serially so cooldown-limited upstreams aren't
+    // overwhelmed by a burst.
+    const pending = state.offlineQueue.slice();
+    let sent = 0, failed = 0;
+
+    const step = () => {
+        if (pending.length === 0) {
+            const type = failed > 0 ? 'warning' : 'success';
+            showToast('Drained offline queue: ' + sent + ' sent'
+                + (failed ? ', ' + failed + ' failed' : ''), type);
+            return;
+        }
+        const entry = pending.shift();
+        fetch('api/trigger.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ webhook_url: entry.url })
+        })
+        .then(async (r) => {
+            let data = {};
+            try { data = await r.json(); } catch (e) {}
+            if (r.ok && data.success) {
+                sent++;
+                // Remove exactly this entry (match by url + ts).
+                state.offlineQueue = state.offlineQueue.filter((e) => !(e.url === entry.url && e.ts === entry.ts));
+                saveState();
+            } else {
+                failed++;
+                // 4xx/5xx from a live endpoint — the URL is reachable
+                // but the request was rejected; retrying on the next
+                // tick is pointless. Remove so it doesn't spin forever.
+                state.offlineQueue = state.offlineQueue.filter((e) => !(e.url === entry.url && e.ts === entry.ts));
+                saveState();
+            }
+        })
+        .catch(() => {
+            // Genuine network failure — the item stays in the queue
+            // for the next 'online' handler. Don't remove.
+            failed++;
+        })
+        .finally(step);
+    };
+    step();
 }
 
 function handleSuccess(button, webhookName, payload, durationMs) {

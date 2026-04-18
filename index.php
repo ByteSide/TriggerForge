@@ -469,6 +469,10 @@ require __DIR__ . '/lib/render.php';
                         <span class="settings-label">Pull-to-refresh (mobile)</span>
                         <input type="checkbox" class="settings-toggle" data-setting="enablePullToRefresh">
                     </label>
+                    <label class="settings-field settings-field-toggle">
+                        <span class="settings-label">Queue fires when offline</span>
+                        <input type="checkbox" class="settings-toggle" data-setting="enableOfflineQueue">
+                    </label>
                 </div>
 
                 <section class="settings-section" id="settingsAppSection" hidden>
