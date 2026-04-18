@@ -538,6 +538,8 @@ function createFavoriteButton(itemId, name, position, type, url = null, faviconS
                 triggerWebhook(originalBtn);
             }
         });
+
+        attachFavoriteDragSort(btn);
     } else if (type === 'link') {
         btn.className = 'favorite-link-btn';
         btn.setAttribute('data-link-id', itemId);
@@ -588,9 +590,72 @@ function createFavoriteButton(itemId, name, position, type, url = null, faviconS
             }
             openLinkSafely(url, name);
         });
+
+        attachFavoriteDragSort(btn);
     }
 
     return btn;
+}
+
+/**
+ * Attach HTML5 drag-and-drop handlers to a favorites-bar button so the
+ * user can reorder the Quick Actions tray. Operates on state.favorites
+ * (array order = display order), persists, and re-renders.
+ */
+function attachFavoriteDragSort(btn) {
+    btn.setAttribute('draggable', 'true');
+
+    btn.addEventListener('dragstart', (e) => {
+        btn.classList.add('dragging');
+        try {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', 'tf-fav-reorder');
+        } catch (err) { /* some platforms restrict drag metadata */ }
+    });
+
+    btn.addEventListener('dragend', () => {
+        btn.classList.remove('dragging');
+        document.querySelectorAll('.favorite-btn.drag-over, .favorite-link-btn.drag-over')
+            .forEach((el) => el.classList.remove('drag-over'));
+    });
+
+    btn.addEventListener('dragover', (e) => {
+        const dragged = document.querySelector('.favorite-btn.dragging, .favorite-link-btn.dragging');
+        if (!dragged || dragged === btn) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        btn.classList.add('drag-over');
+    });
+
+    btn.addEventListener('dragleave', () => {
+        btn.classList.remove('drag-over');
+    });
+
+    btn.addEventListener('drop', (e) => {
+        e.preventDefault();
+        btn.classList.remove('drag-over');
+        const dragged = document.querySelector('.favorite-btn.dragging, .favorite-link-btn.dragging');
+        if (!dragged || dragged === btn) return;
+
+        const keyOf = (el) => {
+            const type = el.getAttribute('data-type');
+            const id = type === 'link'
+                ? el.getAttribute('data-link-id')
+                : el.getAttribute('data-webhook-id');
+            return { id: id, type: type };
+        };
+        const src = keyOf(dragged);
+        const tgt = keyOf(btn);
+        const fromIdx = state.favorites.findIndex((f) => f.id === src.id && f.type === src.type);
+        const toIdx = state.favorites.findIndex((f) => f.id === tgt.id && f.type === tgt.type);
+        if (fromIdx < 0 || toIdx < 0) return;
+
+        const [moved] = state.favorites.splice(fromIdx, 1);
+        state.favorites.splice(fromIdx < toIdx ? toIdx - 1 : toIdx, 0, moved);
+        saveState();
+        renderFavorites();
+        updateFavoriteStars();
+    });
 }
 
 function updateFavoriteStars() {

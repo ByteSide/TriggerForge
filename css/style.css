@@ -2199,18 +2199,24 @@ body.test-mode .confirmation-modal {
    Native HTML5 drag on desktop. Cursor hint via `grab`, ghost-state on
    dragstart, and an orange border to mark the drop target. */
 .trigger-btn[draggable="true"],
-.custom-link-btn[draggable="true"] {
+.custom-link-btn[draggable="true"],
+.favorite-btn[draggable="true"],
+.favorite-link-btn[draggable="true"] {
     cursor: grab;
 }
 
 .trigger-btn.dragging,
-.custom-link-btn.dragging {
+.custom-link-btn.dragging,
+.favorite-btn.dragging,
+.favorite-link-btn.dragging {
     opacity: 0.4;
     cursor: grabbing;
 }
 
 .trigger-btn.drag-over,
-.custom-link-btn.drag-over {
+.custom-link-btn.drag-over,
+.favorite-btn.drag-over,
+.favorite-link-btn.drag-over {
     outline: 2px dashed var(--color-primary);
     outline-offset: -4px;
 }
