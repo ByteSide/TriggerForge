@@ -25,6 +25,7 @@ const CORE_ASSETS = [
     'js/app.js',
     'js/particles.js',
     'js/admin.js',
+    'js/theme-preload.js',
     'assets/icons/boxicons/boxicons.css',
     'assets/fonts/jetbrainsmono/JetBrainsMono-Regular.woff2',
     'assets/fonts/jetbrainsmono/JetBrainsMono-Medium.woff2',
