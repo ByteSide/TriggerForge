@@ -87,6 +87,30 @@ self.addEventListener('fetch', (event) => {
     // Never precache config editor save results. admin.php navigation
     // falls through to normal cache-first like the main page.
 
+    // Navigation / HTML requests: network-first. Stale-while-revalidate
+    // on HTML would need the user to reload twice to see a new deploy
+    // (first reload serves the cache, second picks up the revalidate).
+    // HTML is cheap to re-fetch and usually the freshness the user
+    // cares about most, so prefer network and fall back to cache when
+    // offline.
+    const isNav = req.mode === 'navigate'
+        || (req.headers.get('Accept') || '').indexOf('text/html') >= 0;
+    if (isNav) {
+        event.respondWith(
+            fetch(req).then((resp) => {
+                if (resp && resp.ok && resp.type === 'basic') {
+                    const clone = resp.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
+                }
+                return resp;
+            }).catch(() => caches.match(req).then((cached) => cached || new Response(
+                'Offline and no cached copy available.',
+                { status: 503, statusText: 'Service Unavailable', headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
+            )))
+        );
+        return;
+    }
+
     event.respondWith(
         caches.match(req).then((cached) => {
             // Stale-while-revalidate: return the cached copy immediately
