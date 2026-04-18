@@ -208,10 +208,10 @@
         CONFIG.particleCountMobile = p0.mobile;
         CONFIG.minOpacity = 0.15 * p0.opacityMul;
         CONFIG.maxOpacity = 0.6 * p0.opacityMul;
-        if (p0.desktop === 0 && p0.mobile === 0) {
-            initialized = true; // marker; re-enabling later goes through applyPreset
-            return;
-        }
+        // Even for the 'off' preset, set up the canvas + animate loop
+        // with zero particles. Empty array is ~free to loop, and leaves
+        // the door open for applyPreset('standard') later to produce a
+        // visible field without having to redo full init.
 
         canvas = document.getElementById('particle-canvas');
         if (!canvas) return;
