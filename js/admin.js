@@ -250,7 +250,12 @@
         nameInput.addEventListener('change', () => {
             const newName = nameInput.value.trim();
             if (newName === '' || newName === catName) { nameInput.value = catName; return; }
-            if (cfg.hasOwnProperty(newName)) {
+            if (newName[0] === '_') {
+                toast('Category names starting with _ are reserved', 'error');
+                nameInput.value = catName;
+                return;
+            }
+            if (Object.prototype.hasOwnProperty.call(cfg, newName)) {
                 toast('A category named "' + newName + '" already exists', 'error');
                 nameInput.value = catName;
                 return;
@@ -458,7 +463,14 @@
         const name = (window.prompt && window.prompt('New category name:', 'New category')) || '';
         const trimmed = String(name).trim();
         if (trimmed === '') return;
-        if (cfg.hasOwnProperty(trimmed)) { toast('Category already exists', 'warning'); return; }
+        if (trimmed[0] === '_') {
+            toast('Category names starting with _ are reserved', 'warning');
+            return;
+        }
+        if (Object.prototype.hasOwnProperty.call(cfg, trimmed)) {
+            toast('Category already exists', 'warning');
+            return;
+        }
         cfg[trimmed] = [];
         render();
     }
