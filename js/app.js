@@ -96,6 +96,28 @@ function isSafeLinkUrl(url) {
     }
 }
 
+// === PWA Install Prompt ===
+// Chrome / Edge fire `beforeinstallprompt` when the app is installable.
+// We stash the event and surface an "Install as app" button in Settings.
+// Safari uses its own "Add to Home Screen" share-menu path — nothing
+// we can trigger programmatically — so the button just stays hidden
+// there. Fires `appinstalled` once install completes.
+let _deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    _deferredInstallPrompt = e;
+    const section = document.getElementById('settingsAppSection');
+    if (section) section.hidden = false;
+});
+window.addEventListener('appinstalled', () => {
+    _deferredInstallPrompt = null;
+    const section = document.getElementById('settingsAppSection');
+    if (section) section.hidden = true;
+    if (typeof showToast === 'function') {
+        showToast('TriggerForge installed', 'success');
+    }
+});
+
 // === Global Error Boundary ===
 // Surface uncaught JS errors instead of letting them die silently in the
 // console. Rate-limited to one toast per 10 s so an error storm doesn't
@@ -2756,6 +2778,28 @@ function initSettings() {
             applySettings();
             updateSettingsUI();
             showToast('Settings reset to defaults', 'info');
+        });
+    }
+
+    // Install-as-app button. Visible only when `beforeinstallprompt`
+    // fired and cached the event; Safari never fires that event so the
+    // section stays hidden there.
+    const btnInstall = document.getElementById('settingsInstallBtn');
+    if (btnInstall) {
+        btnInstall.addEventListener('click', () => {
+            if (!_deferredInstallPrompt) {
+                showToast('Install prompt no longer available — refresh and try again', 'warning');
+                return;
+            }
+            _deferredInstallPrompt.prompt();
+            _deferredInstallPrompt.userChoice.then((choice) => {
+                _deferredInstallPrompt = null;
+                const section = document.getElementById('settingsAppSection');
+                if (section) section.hidden = true;
+                if (choice && choice.outcome === 'accepted') {
+                    showToast('Install accepted', 'success');
+                }
+            }).catch(() => { /* user dismissed */ });
         });
     }
 

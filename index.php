@@ -467,6 +467,14 @@ require __DIR__ . '/lib/render.php';
                     </label>
                 </div>
 
+                <section class="settings-section" id="settingsAppSection" hidden>
+                    <h4 class="settings-section-title">App</h4>
+                    <button type="button" class="settings-action-btn" id="settingsInstallBtn">
+                        <i class='bx bx-mobile-alt' aria-hidden="true"></i>
+                        <span>Install as app</span>
+                    </button>
+                </section>
+
                 <div class="settings-section">
                     <h4 class="settings-section-title">Data</h4>
                     <a href="admin.php" class="settings-action-btn">
