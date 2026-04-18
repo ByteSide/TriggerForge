@@ -35,6 +35,20 @@ Options -Indexes -MultiViews
     </IfModule>
 </FilesMatch>
 
+# Service Worker — must be fetchable without Basic Auth so update
+# checks can run even when the user's session hasn't been re-prompted
+# yet. sw.js is static and contains no secrets (app shell precache +
+# stale-while-revalidate; API calls always hit the network).
+<FilesMatch "^sw\.js$">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Satisfy Any
+        Allow from all
+    </IfModule>
+</FilesMatch>
+
 # HTTP Basic Authentication
 # IMPORTANT: Update the path below to your server's absolute path!
 AuthType Basic

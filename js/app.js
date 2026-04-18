@@ -96,6 +96,53 @@ function isSafeLinkUrl(url) {
     }
 }
 
+// === Service Worker registration ===
+// Precache app shell + stale-while-revalidate for fast repeat visits and
+// working offline-UI. API calls are never cached. On SW update, surface
+// a "Reload" toast; the user explicitly opts in to swap SWs.
+function initServiceWorker() {
+    if (!('serviceWorker' in navigator)) return;
+
+    navigator.serviceWorker.register('sw.js', { scope: './' })
+        .then((reg) => {
+            // Periodic update check — re-fetches sw.js, triggers a new
+            // install if the file changed. 1 hour is a reasonable
+            // compromise between freshness and server load.
+            setInterval(() => { reg.update().catch(() => {}); }, 3600000);
+
+            reg.addEventListener('updatefound', () => {
+                const worker = reg.installing;
+                if (!worker) return;
+                worker.addEventListener('statechange', () => {
+                    // "installed" while a controller exists → a NEW SW
+                    // is waiting. Without a controller it's the very
+                    // first install — no user-facing action needed.
+                    if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+                        showSWUpdateToast(worker);
+                    }
+                });
+            });
+        })
+        .catch((err) => console.warn('[TF] SW registration failed:', err));
+
+    // When the controller changes (user clicked "Reload" → skipWaiting()
+    // → new SW activates), reload the page so the fresh JS/CSS become
+    // the live copy. Debounce to avoid reload loops.
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+    });
+}
+
+function showSWUpdateToast(worker) {
+    showToast('A new version is available', 'info', {
+        label: 'Reload',
+        onClick: () => worker.postMessage({ type: 'SKIP_WAITING' })
+    }, 30000);
+}
+
 // === PWA Install Prompt ===
 // Chrome / Edge fire `beforeinstallprompt` when the app is installable.
 // We stash the event and surface an "Install as app" button in Settings.
@@ -188,6 +235,7 @@ function initTriggerForge() {
     initHistory();
     initBulkFire();
     initScrollToTop();
+    initServiceWorker();
 
     // Restore cooldowns from previous session
     restoreCooldowns();
