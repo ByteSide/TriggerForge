@@ -29,10 +29,18 @@ $appMeta = isset($config['_app']) && is_array($config['_app']) ? $config['_app']
 $appTitle = (isset($appMeta['title']) && is_string($appMeta['title']) && trim($appMeta['title']) !== '')
     ? trim($appMeta['title'])
     : 'TriggerForge';
-$appBgImage = (isset($appMeta['background_image']) && is_string($appMeta['background_image'])
-    && preg_match('#^https?://|^/|^\./|^assets/#i', $appMeta['background_image']))
-    ? $appMeta['background_image']
-    : '';
+// Strict URL allow-list so the value going into the inline CSS
+// --app-bg-image: url('…') can't carry quotes, parentheses or control
+// characters that would escape out of the url() grammar and inject
+// unrelated declarations.
+$appBgImage = '';
+if (isset($appMeta['background_image']) && is_string($appMeta['background_image'])) {
+    $candidate = $appMeta['background_image'];
+    if (strlen($candidate) <= 2048 &&
+        preg_match('#^(https?://|/|\./|assets/)[A-Za-z0-9/._~:?&=%\-]+$#', $candidate)) {
+        $appBgImage = $candidate;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

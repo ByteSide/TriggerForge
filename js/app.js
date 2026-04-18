@@ -23,6 +23,7 @@ const TOAST_DURATION = 4000; // 4 seconds
 const MAX_FAVORITES = 10;
 const MAX_TOASTS = 5; // cap concurrent toasts to prevent DOM bloat on spam
 const MAX_HISTORY = 50; // ring-buffer cap for state.history
+const MAX_HISTORY_BODY = 4096; // per-entry response body cap before it enters localStorage
 const ALLOWED_LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 
 // === Settings ===
@@ -2781,9 +2782,13 @@ function pushHistoryEntry(button, webhookName, status, payload, durationMs, erro
         httpCode: typeof p.http_code === 'number' ? p.http_code : 0,
         durationMs: typeof durationMs === 'number' ? durationMs : 0,
         mode: state.isTestMode ? 'test' : 'prod',
-        // Carry the response envelope so the details modal works even
-        // when the config item has since been renamed / removed.
-        responseBody: typeof p.response_body === 'string' ? p.response_body : '',
+        // Carry a trimmed response envelope so the details modal works
+        // even when the config item has since been renamed / removed.
+        // 50 entries × unbounded 64 KB bodies would blow past the
+        // ~5 MB localStorage budget — cap each stored body hard.
+        responseBody: typeof p.response_body === 'string'
+            ? p.response_body.slice(0, MAX_HISTORY_BODY)
+            : '',
         responseHeaders: p.response_headers && typeof p.response_headers === 'object' ? p.response_headers : {},
         responseContentType: typeof p.response_content_type === 'string' ? p.response_content_type : '',
         errorMessage: errorMessage || ''
