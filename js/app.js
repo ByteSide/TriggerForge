@@ -859,8 +859,32 @@ function getRemainingCooldown(webhookId) {
     return state.cooldowns[webhookId] - Date.now();
 }
 
+/**
+ * Resolve the cooldown duration for a given button. Per-webhook override
+ * via data-cooldown (emitted from config's 'cooldown' field) wins; falls
+ * back to the global COOLDOWN_DURATION. A value of 0 means "no cooldown
+ * at all" for this button.
+ */
+function resolveCooldownDuration(button) {
+    const raw = button ? button.dataset.cooldown : undefined;
+    if (raw === undefined || raw === '') return COOLDOWN_DURATION;
+    const n = parseInt(raw, 10);
+    if (isNaN(n) || n < 0) return COOLDOWN_DURATION;
+    return n;
+}
+
 function startCooldown(webhookId, button) {
-    const endTime = Date.now() + COOLDOWN_DURATION;
+    const duration = resolveCooldownDuration(button);
+    // 0 = explicit opt-out. Still tidy any stale cooldown entry so the
+    // button isn't wrongly marked disabled on the next page load.
+    if (duration === 0) {
+        if (state.cooldowns[webhookId] !== undefined) {
+            delete state.cooldowns[webhookId];
+            saveState();
+        }
+        return;
+    }
+    const endTime = Date.now() + duration;
     state.cooldowns[webhookId] = endTime;
     saveState();
 
@@ -874,10 +898,10 @@ function startCooldown(webhookId, button) {
     if (!cooldownBar || !textSpan) return;
     const originalText = textSpan.textContent;
 
-    updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, originalText);
+    updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, originalText, duration);
 }
 
-function updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, originalText) {
+function updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, originalText, duration) {
     // Bail if button was removed from DOM (e.g. after a re-render)
     if (!button.isConnected) {
         return;
@@ -907,13 +931,17 @@ function updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, origina
 
     const remaining = getRemainingCooldown(webhookId);
     const secondsLeft = Math.ceil(remaining / 1000);
-    const progress = ((COOLDOWN_DURATION - remaining) / COOLDOWN_DURATION) * 100;
+    // Use the per-button duration (captured at startCooldown / restoreCooldowns
+    // time) so custom long cooldowns show a sensibly-proportioned progress
+    // bar instead of overflowing the default 10 s grid.
+    const effective = duration && duration > 0 ? duration : COOLDOWN_DURATION;
+    const progress = ((effective - remaining) / effective) * 100;
 
     textSpan.textContent = `Ready in ${secondsLeft}s...`;
     cooldownBar.style.width = `${progress}%`;
 
     requestAnimationFrame(() => {
-        updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, originalText);
+        updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, originalText, duration);
     });
 }
 
@@ -937,7 +965,10 @@ function restoreCooldowns() {
             button.classList.add('cooldown');
             button.disabled = true;
             const originalText = button.getAttribute('data-webhook-name');
-            updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, originalText);
+            // Recover the duration from the button's data-* attribute so
+            // the progress bar fills smoothly even after a page reload.
+            const duration = resolveCooldownDuration(button);
+            updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, originalText, duration);
         } else {
             delete state.cooldowns[webhookId];
         }

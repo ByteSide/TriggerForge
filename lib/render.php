@@ -55,6 +55,12 @@ function tf_render_category_close() {
 function tf_render_webhook_button(array $item, $itemId, $categoryName) {
     $itemName = (string)($item['name'] ?? '');
     $itemDesc = (string)($item['description'] ?? $itemName);
+    // Optional per-webhook overrides. Emitted only when set so the JS side
+    // can dataset-check against undefined and fall back to the default.
+    $cooldownAttr = '';
+    if (isset($item['cooldown']) && is_int($item['cooldown']) && $item['cooldown'] >= 0) {
+        $cooldownAttr = ' data-cooldown="' . (int)$item['cooldown'] . '"';
+    }
     ?>
 
                                     <!-- Webhook Button -->
@@ -66,7 +72,7 @@ function tf_render_webhook_button(array $item, $itemId, $categoryName) {
                                         data-webhook-url-prod="<?php echo tf_e((string)($item['webhook_url_prod'] ?? '')); ?>"
                                         data-webhook-url-test="<?php echo tf_e((string)($item['webhook_url_test'] ?? '')); ?>"
                                         data-webhook-name="<?php echo tf_e($itemName); ?>"
-                                        data-category="<?php echo tf_e($categoryName); ?>"
+                                        data-category="<?php echo tf_e($categoryName); ?>"<?php echo $cooldownAttr; ?>
                                         title="<?php echo tf_e($itemDesc); ?>"
                                         aria-label="<?php echo tf_e($itemName); ?>"
                                     >
