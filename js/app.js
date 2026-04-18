@@ -2434,6 +2434,15 @@ function initDragSort() {
                 b2.getAttribute('data-webhook-id') || b2.getAttribute('data-link-id') || b2.getAttribute('data-chain-id')
             ).filter(Boolean);
             state.itemOrder[targetCat] = newOrder;
+            // Dragging is an explicit intent to use THIS order. If a sort
+            // mode is active (alphabet / lastUsed / mostUsed) it would
+            // overwrite the drag immediately — snap back to 'config' so
+            // the drag is visible and persistent.
+            if (state.settings && state.settings.sortOrder && state.settings.sortOrder !== 'config') {
+                state.settings.sortOrder = 'config';
+                if (typeof updateSettingsUI === 'function') updateSettingsUI();
+                if (typeof showToast === 'function') showToast('Sort order switched to Config', 'info');
+            }
             saveState();
             applyItemOrder();
         });
