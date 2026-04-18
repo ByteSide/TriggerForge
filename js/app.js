@@ -1280,6 +1280,39 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
     });
 }
 
+// === Browser Notifications ===
+// Opt-in. Only shows when the tab is backgrounded (document.hidden) so
+// the in-page toast is sufficient when the user is looking. No Web Push
+// server — these are local notifications scheduled from the client.
+function maybeRequestNotificationPermission() {
+    if (typeof Notification === 'undefined') return Promise.resolve('denied');
+    if (Notification.permission === 'granted' || Notification.permission === 'denied') {
+        return Promise.resolve(Notification.permission);
+    }
+    try { return Notification.requestPermission(); }
+    catch (e) { return Promise.resolve('denied'); }
+}
+
+function notifyFire(title, body, isError) {
+    if (!state.settings.enablePushNotifications) return;
+    if (typeof Notification === 'undefined') return;
+    if (Notification.permission !== 'granted') return;
+    // Only fire when the tab is actually out of focus — otherwise the
+    // on-page toast is more informative and less disruptive.
+    if (!document.hidden) return;
+    try {
+        new Notification(title, {
+            body: body,
+            icon: 'assets/favicons/web-app-manifest-192x192.png',
+            badge: 'assets/favicons/favicon-96x96.png',
+            // Replace same-webhook notifications rather than stack
+            // (avoids a notification cascade from bulk-fires).
+            tag: 'tf-fire-' + title,
+            silent: false
+        });
+    } catch (e) { /* some browsers forbid the constructor outside user gesture */ }
+}
+
 // === Offline Queue ===
 // Fires attempted while offline get stashed in state.offlineQueue; on
 // the next `online` event (or boot while online) we drain them through
@@ -1396,6 +1429,12 @@ function handleSuccess(button, webhookName, payload, durationMs) {
     }
     showToast(`✓ ${webhookName} triggered successfully!`, 'success', action, toastDuration);
 
+    // Native notification when the tab isn't in focus — respects the
+    // opt-in state.settings.enablePushNotifications flag.
+    notifyFire('✓ ' + webhookName,
+        'Triggered successfully' + (payload && payload.http_code ? ' (HTTP ' + payload.http_code + ')' : ''),
+        false);
+
     // Reset after 1 second. Gate on the class so we don't stomp on the
     // icon if the user triggered another request in the meantime (which
     // would have moved the button out of the `success` state already).
@@ -1448,6 +1487,8 @@ function handleError(button, message, payload, durationMs) {
         ? { label: 'Details', onClick: () => openResponseViewer(webhookName, payload, false) }
         : null;
     showToast(`✗ Error: ${message}`, 'error', action);
+
+    notifyFire('✗ ' + webhookName, message, true);
 
     pushHistoryEntry(button, webhookName, 'error', payload, durationMs, message);
 
@@ -2954,6 +2995,26 @@ function initSettings() {
             const key = input.dataset.setting;
             if (!(key in DEFAULT_SETTINGS)) return;
             if (typeof DEFAULT_SETTINGS[key] !== 'boolean') return;
+
+            // Enabling push notifications needs an OS-level permission
+            // prompt; ask the user and roll back the toggle if denied.
+            if (input.checked && key === 'enablePushNotifications') {
+                maybeRequestNotificationPermission().then((result) => {
+                    if (result !== 'granted') {
+                        state.settings[key] = false;
+                        input.checked = false;
+                        saveState();
+                        updateSettingsUI();
+                        showToast('Notification permission denied — feature disabled', 'warning');
+                        return;
+                    }
+                    state.settings[key] = true;
+                    saveState();
+                    updateSettingsUI();
+                });
+                return;
+            }
+
             state.settings[key] = input.checked;
             saveState();
             applySettings();
