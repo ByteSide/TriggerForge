@@ -918,6 +918,32 @@ function startCooldown(webhookId, button) {
     updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, originalText, duration);
 }
 
+/**
+ * Screen-reader-friendly cooldown announcements. The visible cooldown
+ * bar updates at rAF frequency (60 Hz) which would carpet-bomb AT
+ * users if we piped the textual countdown into aria-live. Instead we
+ * keep a parallel sr-only live-region and only rewrite it when the
+ * whole-seconds value changes.
+ */
+const _cooldownAnnouncedAt = {};
+function announceCooldown(button, webhookId, secondsLeft) {
+    if (_cooldownAnnouncedAt[webhookId] === secondsLeft) return;
+    _cooldownAnnouncedAt[webhookId] = secondsLeft;
+
+    let live = button.querySelector('.trigger-btn-sr-live');
+    if (!live) {
+        live = document.createElement('span');
+        live.className = 'sr-only trigger-btn-sr-live';
+        live.setAttribute('aria-live', 'polite');
+        live.setAttribute('aria-atomic', 'true');
+        button.appendChild(live);
+    }
+    const name = button.getAttribute('data-webhook-name') || 'Webhook';
+    live.textContent = secondsLeft > 0
+        ? name + ' ready in ' + secondsLeft + ' seconds'
+        : name + ' ready';
+}
+
 function updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, originalText, duration) {
     // Bail if button was removed from DOM (e.g. after a re-render)
     if (!button.isConnected) {
@@ -937,6 +963,11 @@ function updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, origina
             saveState();
         }
 
+        // Announce readiness once to screen readers, then forget so a
+        // future cooldown starts fresh.
+        announceCooldown(button, webhookId, 0);
+        delete _cooldownAnnouncedAt[webhookId];
+
         // Brief glow animation when ready
         button.style.boxShadow = 'var(--glow-primary-strong)';
         setTimeout(() => {
@@ -948,6 +979,7 @@ function updateCooldownDisplay(webhookId, button, cooldownBar, textSpan, origina
 
     const remaining = getRemainingCooldown(webhookId);
     const secondsLeft = Math.ceil(remaining / 1000);
+    announceCooldown(button, webhookId, secondsLeft);
     // Use the per-button duration (captured at startCooldown / restoreCooldowns
     // time) so custom long cooldowns show a sensibly-proportioned progress
     // bar instead of overflowing the default 10 s grid.
