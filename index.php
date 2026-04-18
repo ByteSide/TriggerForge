@@ -26,9 +26,15 @@ require __DIR__ . '/lib/version.php';
 // Plain strings only — no HTML pass-through; an imported/untrusted
 // config can't inject markup into the header or page <title>.
 $appMeta = isset($config['_app']) && is_array($config['_app']) ? $config['_app'] : [];
-$appTitle = (isset($appMeta['title']) && is_string($appMeta['title']) && trim($appMeta['title']) !== '')
-    ? trim($appMeta['title'])
-    : 'TriggerForge';
+$appTitle = 'TriggerForge';
+if (isset($appMeta['title']) && is_string($appMeta['title'])) {
+    $t = trim($appMeta['title']);
+    if ($t !== '') {
+        // Cap at a sane length so an oversized title doesn't blow out
+        // the header row or produce an unreasonably long page title.
+        $appTitle = mb_substr($t, 0, 64);
+    }
+}
 // Strict URL allow-list so the value going into the inline CSS
 // --app-bg-image: url('…') can't carry quotes, parentheses or control
 // characters that would escape out of the url() grammar and inject

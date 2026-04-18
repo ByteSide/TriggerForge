@@ -48,8 +48,12 @@ function tf_validate_config(array $config) {
                 $errors[] = '_app: must be an object';
                 continue;
             }
-            if (isset($webhooks['title']) && !is_string($webhooks['title'])) {
-                $errors[] = '_app.title: must be a string';
+            if (isset($webhooks['title'])) {
+                if (!is_string($webhooks['title'])) {
+                    $errors[] = '_app.title: must be a string';
+                } elseif (mb_strlen($webhooks['title']) > 64) {
+                    $errors[] = '_app.title: must be 64 characters or fewer';
+                }
             }
             if (isset($webhooks['background_image'])) {
                 if (!is_string($webhooks['background_image']) ||
