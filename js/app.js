@@ -1901,9 +1901,25 @@ function initModeToggle() {
         state.isTestMode = e.target.checked;
         saveState();
         updateModeUI();
-        
+
         const mode = state.isTestMode ? 'TEST' : 'PROD';
-        showToast(`Switched to ${mode} mode`, 'info');
+        // Count trigger buttons that don't have a URL for the mode we
+        // just switched into. If there are any, surface a warning so
+        // the user isn't surprised when those buttons refuse to fire.
+        const attr = state.isTestMode ? 'data-webhook-url-test' : 'data-webhook-url-prod';
+        const missing = Array.from(document.querySelectorAll('.trigger-btn'))
+            .filter((b) => !b.getAttribute(attr))
+            .length;
+        if (missing > 0) {
+            showToast(
+                'Switched to ' + mode + ' mode — ' + missing
+                + ' webhook' + (missing > 1 ? 's have' : ' has')
+                + ' no ' + mode + ' URL',
+                'warning'
+            );
+        } else {
+            showToast('Switched to ' + mode + ' mode', 'info');
+        }
     });
 }
 
