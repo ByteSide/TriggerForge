@@ -578,7 +578,7 @@ if (isset($appMeta['background_image']) && is_string($appMeta['background_image'
 
     <!-- Bulk Fire Bar — fixed bottom-right when at least one webhook
          button has been Shift-clicked. Escape clears the selection. -->
-    <div class="bulk-fire-bar" id="bulkFireBar" aria-hidden="true" role="region" aria-label="Bulk fire selection">
+    <div class="bulk-fire-bar" id="bulkFireBar" aria-hidden="true" inert role="region" aria-label="Bulk fire selection">
         <span class="bulk-fire-label">
             <i class='bx bx-checkbox-checked' aria-hidden="true"></i>
             <strong id="bulkFireCount">0</strong>

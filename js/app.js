@@ -1104,9 +1104,13 @@ function updateBulkFireBar() {
     if (bulkSelection.size === 0) {
         bar.classList.remove('active');
         bar.setAttribute('aria-hidden', 'true');
+        // Restore inert so the off-screen (translated) bar can't be
+        // tab-focused while invisible.
+        bar.setAttribute('inert', '');
     } else {
         bar.classList.add('active');
         bar.removeAttribute('aria-hidden');
+        bar.removeAttribute('inert');
         if (count) count.textContent = String(bulkSelection.size);
     }
 }
