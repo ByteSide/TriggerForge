@@ -10,6 +10,10 @@
  * from config.php, just as JSON instead of PHP literal.
  */
 
+if (!ini_get('date.timezone')) {
+    date_default_timezone_set('UTC');
+}
+
 header('X-Content-Type-Options: nosniff');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'GET') {

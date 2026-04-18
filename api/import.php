@@ -17,6 +17,13 @@
  * no var_export of anything untyped.
  */
 
+// Ensure a default timezone before any date() call. On shared hosts
+// without date.timezone in php.ini, PHP otherwise emits an E_WARNING
+// that gets sent after the JSON headers and corrupts the response.
+if (!ini_get('date.timezone')) {
+    date_default_timezone_set('UTC');
+}
+
 header('Content-Type: application/json; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
 
