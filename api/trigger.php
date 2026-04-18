@@ -132,6 +132,17 @@ foreach ($config as $category => $webhooks) {
         if (isset($webhook['webhook_url_prod']) && is_string($webhook['webhook_url_prod'])) {
             $urlToItem[$webhook['webhook_url_prod']] = $webhook;
         }
+        // Undo URL: whitelist it too so the client's "Undo" toast button
+        // can POST to it via the same endpoint. The undo call uses the
+        // default minimal payload (no item payload/method/headers
+        // overrides) — semantically an undo is a separate action, not a
+        // copy of the main fire.
+        if (isset($webhook['undo_url']) && is_string($webhook['undo_url'])) {
+            $urlToItem[$webhook['undo_url']] = [
+                'type' => 'webhook',
+                'name' => (isset($webhook['name']) ? $webhook['name'] : 'Undo') . ' (undo)',
+            ];
+        }
     }
 }
 

@@ -80,6 +80,10 @@ function tf_render_webhook_button(array $item, $itemId, $categoryName) {
     if (isset($item['confirm']) && $item['confirm'] === false) {
         $confirmAttr = ' data-confirm="false"';
     }
+    $undoAttr = '';
+    if (isset($item['undo_url']) && is_string($item['undo_url']) && $item['undo_url'] !== '') {
+        $undoAttr = ' data-undo-url="' . tf_e($item['undo_url']) . '"';
+    }
     ?>
 
                                     <!-- Webhook Button -->
@@ -92,7 +96,7 @@ function tf_render_webhook_button(array $item, $itemId, $categoryName) {
                                         data-webhook-url-prod="<?php echo tf_e((string)($item['webhook_url_prod'] ?? '')); ?>"
                                         data-webhook-url-test="<?php echo tf_e((string)($item['webhook_url_test'] ?? '')); ?>"
                                         data-webhook-name="<?php echo tf_e($itemName); ?>"
-                                        data-category="<?php echo tf_e($categoryName); ?>"<?php echo $cooldownAttr; echo $confirmAttr; ?>
+                                        data-category="<?php echo tf_e($categoryName); ?>"<?php echo $cooldownAttr; echo $confirmAttr; echo $undoAttr; ?>
                                         title="<?php echo tf_e($itemDesc); ?>"
                                         aria-label="<?php echo tf_e($itemName); ?>"
                                     >

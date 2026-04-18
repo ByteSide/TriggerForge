@@ -1047,14 +1047,18 @@ function handleSuccess(button, webhookName, payload, durationMs) {
     // Add success class for color transition
     button.classList.add('success');
 
-    // Toast — with a "Details" action when the upstream returned a body
-    // worth inspecting (e.g. an n8n execution id, a created-resource
-    // record). Skips the action entirely for empty/no-content responses
-    // so the common case stays clutter-free.
-    const action = _responseHasDetails(payload)
-        ? { label: 'Details', onClick: () => openResponseViewer(webhookName, payload, true) }
-        : null;
-    showToast(`✓ ${webhookName} triggered successfully!`, 'success', action);
+    // Toast — action priority: Undo (if configured) > Details (if the
+    // upstream returned something worth inspecting) > none.
+    const undoUrl = button.getAttribute('data-undo-url') || '';
+    let action = null;
+    let toastDuration;
+    if (undoUrl && /^https?:\/\//i.test(undoUrl)) {
+        action = { label: 'Undo', onClick: () => fireUndo(undoUrl, webhookName) };
+        toastDuration = 8000;
+    } else if (_responseHasDetails(payload)) {
+        action = { label: 'Details', onClick: () => openResponseViewer(webhookName, payload, true) };
+    }
+    showToast(`✓ ${webhookName} triggered successfully!`, 'success', action, toastDuration);
 
     // Reset after 1 second. Gate on the class so we don't stomp on the
     // icon if the user triggered another request in the meantime (which
@@ -1064,6 +1068,31 @@ function handleSuccess(button, webhookName, payload, durationMs) {
         button.classList.remove('success');
         if (icon) icon.className = originalIconClass;
     }, 1000);
+}
+
+/**
+ * Fire the configured undo_url for a webhook. Uses the same
+ * api/trigger.php endpoint — the URL is whitelisted server-side with a
+ * minimal item (default payload / POST / application-json) so the undo
+ * path doesn't inherit the main fire's overrides.
+ */
+function fireUndo(undoUrl, webhookName) {
+    fetch('api/trigger.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webhook_url: undoUrl })
+    })
+    .then(async (r) => {
+        let data = {};
+        try { data = await r.json(); } catch (e) {}
+        if (r.ok && data.success) {
+            showToast('↩ Undo fired for ' + webhookName, 'success');
+        } else {
+            const msg = (data && data.message) ? data.message : ('HTTP ' + r.status);
+            showToast('✗ Undo failed: ' + msg, 'error');
+        }
+    })
+    .catch((err) => showToast('✗ Undo request failed: ' + err.message, 'error'));
 }
 
 function handleError(button, message, payload, durationMs) {
@@ -1263,7 +1292,7 @@ function restoreCooldowns() {
  *        action button (e.g. "Details" link on the response viewer).
  *        Clicking runs onClick() then closes the toast.
  */
-function showToast(message, type = 'info', action = null) {
+function showToast(message, type = 'info', action = null, duration) {
     const container = document.getElementById('toastContainer');
     if (!container) return;
 
@@ -1328,10 +1357,13 @@ function showToast(message, type = 'info', action = null) {
         closeToast(toast);
     });
 
-    // Auto-dismiss after TOAST_DURATION
+    // Auto-dismiss; per-toast override via `duration` (e.g. the Undo
+    // window wants longer than the default to give the user time to
+    // react).
+    const ms = typeof duration === 'number' && duration > 0 ? duration : TOAST_DURATION;
     setTimeout(() => {
         closeToast(toast);
-    }, TOAST_DURATION);
+    }, ms);
 }
 
 function closeToast(toast) {
