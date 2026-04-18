@@ -51,29 +51,7 @@ if (isset($appMeta['background_image']) && is_string($appMeta['background_image'
     <meta name="theme-color" content="#06171E">
     <meta name="color-scheme" content="dark light">
     <title><?php echo htmlspecialchars($appTitle); ?></title>
-    <script>
-    // Apply persisted theme BEFORE the CSS parses so a light-mode user
-    // doesn't see a dark-theme flash on every page load. Same logic as
-    // applySettings() but minimal and dependency-free.
-    (function () {
-        try {
-            var raw = localStorage.getItem('triggerforge_settings');
-            var theme = 'dark';
-            if (raw) {
-                var s = JSON.parse(raw);
-                if (s && typeof s.theme === 'string') theme = s.theme;
-            }
-            if (theme === 'auto') {
-                theme = (window.matchMedia &&
-                    window.matchMedia('(prefers-color-scheme: light)').matches)
-                    ? 'light' : 'dark';
-            }
-            if (theme === 'light' || theme === 'dark') {
-                document.documentElement.dataset.theme = theme;
-            }
-        } catch (e) { /* localStorage unavailable — stay with default dark */ }
-    })();
-    </script>
+    <script src="js/theme-preload.js?v=<?php echo (int)@filemtime(__DIR__.'/js/theme-preload.js'); ?>"></script>
     
     <!-- CSS. filemtime() query strings force the browser to refetch on
          deploy — avoids the classic "hard-reload needed after update" trap. -->

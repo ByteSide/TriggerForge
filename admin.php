@@ -26,33 +26,20 @@ if (!is_array($config)) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="color-scheme" content="dark light">
     <title>TriggerForge · Config Editor</title>
-    <script>
-    // Same theme-flash-prevention inline as the main app.
-    (function () {
-        try {
-            var raw = localStorage.getItem('triggerforge_settings');
-            var theme = 'dark';
-            if (raw) {
-                var s = JSON.parse(raw);
-                if (s && typeof s.theme === 'string') theme = s.theme;
-            }
-            if (theme === 'auto') {
-                theme = (window.matchMedia &&
-                    window.matchMedia('(prefers-color-scheme: light)').matches)
-                    ? 'light' : 'dark';
-            }
-            if (theme === 'light' || theme === 'dark') {
-                document.documentElement.dataset.theme = theme;
-            }
-        } catch (e) {}
-    })();
-    </script>
+    <script src="js/theme-preload.js?v=<?php echo (int)@filemtime(__DIR__.'/js/theme-preload.js'); ?>"></script>
     <link rel="stylesheet" href="assets/icons/boxicons/boxicons.css">
     <link rel="stylesheet" href="css/bg.css?v=<?php echo (int)@filemtime(__DIR__.'/css/bg.css'); ?>">
     <link rel="stylesheet" href="css/style.css?v=<?php echo (int)@filemtime(__DIR__.'/css/style.css'); ?>">
     <link rel="stylesheet" href="css/admin.css?v=<?php echo (int)@filemtime(__DIR__.'/css/admin.css'); ?>">
 </head>
-<body>
+<body data-initial-config="<?php echo htmlspecialchars(
+    json_encode(
+        $config,
+        JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
+    ),
+    ENT_QUOTES | ENT_SUBSTITUTE,
+    'UTF-8'
+); ?>">
     <a class="skip-link" href="#adminBody">Skip to content</a>
 
     <div class="admin-container">
@@ -105,14 +92,6 @@ if (!is_array($config)) {
         </div>
     </div>
 
-    <script>
-        window.__TF_INITIAL_CONFIG__ = <?php
-            echo json_encode(
-                $config,
-                JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT
-            );
-        ?>;
-    </script>
     <script src="js/admin.js?v=<?php echo (int)@filemtime(__DIR__.'/js/admin.js'); ?>"></script>
 </body>
 </html>

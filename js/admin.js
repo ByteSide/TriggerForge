@@ -9,7 +9,15 @@
 (function () {
     'use strict';
 
-    const INITIAL = window.__TF_INITIAL_CONFIG__;
+    // Config is passed via a body data attribute rather than an inline
+    // <script> so the CSP `script-src 'self'` header can stay strict.
+    let INITIAL = {};
+    try {
+        const raw = document.body ? document.body.getAttribute('data-initial-config') : '';
+        if (raw) INITIAL = JSON.parse(raw);
+    } catch (e) {
+        console.warn('admin: could not parse initial config', e);
+    }
     let cfg = (INITIAL && typeof INITIAL === 'object' && !Array.isArray(INITIAL)) ? INITIAL : {};
 
     // Normalise category values. PHP arrays with mixed keys (e.g.
