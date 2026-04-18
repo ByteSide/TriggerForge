@@ -4,18 +4,71 @@
   "title": "TriggerForge Config",
   "description": "Shape of config/config.php once the 'return [...]' array is loaded. PHP ingests this as a nested associative array; the same structure serialised to JSON matches this schema. Used by the CLI validator, the (upcoming) web config editor, and IDEs for autocomplete.",
   "type": "object",
-  "additionalProperties": {
-    "description": "Each top-level key is the display name of a category. The value is an array of item entries that appear in that category's accordion section.",
-    "type": "array",
-    "items": {
-      "oneOf": [
-        { "$ref": "#/$defs/webhookItem" },
-        { "$ref": "#/$defs/linkItem" },
-        { "$ref": "#/$defs/chainItem" }
-      ]
+  "properties": {
+    "_app": {
+      "description": "Reserved top-level app-level branding. Not a category — skipped by the item iterator and the webhook URL whitelist.",
+      "type": "object",
+      "properties": {
+        "title": {
+          "description": "Overrides the page <title> and the header logo (plain text only, no HTML pass-through).",
+          "type": "string",
+          "maxLength": 64
+        },
+        "background_image": {
+          "description": "URL (http(s)) or relative assets/ path to a background image; painted behind a dark overlay.",
+          "type": "string",
+          "pattern": "^(https?://|/|\\./|assets/)[A-Za-z0-9/._~:?&=%\\-]+$",
+          "maxLength": 2048
+        }
+      },
+      "additionalProperties": false
     }
   },
+  "additionalProperties": {
+    "description": "Any non-reserved top-level key is the display name of a category. Value is a list of item entries. The list may also carry a reserved '_meta' key (string-keyed alongside the numeric item keys, which PHP arrays allow and which JSON serialises as an object) with optional per-category icon and color.",
+    "oneOf": [
+      {
+        "type": "array",
+        "items": {
+          "oneOf": [
+            { "$ref": "#/$defs/webhookItem" },
+            { "$ref": "#/$defs/linkItem" },
+            { "$ref": "#/$defs/chainItem" }
+          ]
+        }
+      },
+      {
+        "type": "object",
+        "properties": {
+          "_meta": { "$ref": "#/$defs/categoryMeta" }
+        },
+        "patternProperties": {
+          "^[0-9]+$": {
+            "oneOf": [
+              { "$ref": "#/$defs/webhookItem" },
+              { "$ref": "#/$defs/linkItem" },
+              { "$ref": "#/$defs/chainItem" }
+            ]
+          }
+        },
+        "additionalProperties": false
+      }
+    ]
+  },
   "$defs": {
+    "categoryMeta": {
+      "description": "Optional per-category metadata.",
+      "type": "object",
+      "properties": {
+        "icon": { "$ref": "#/$defs/iconName" },
+        "color": {
+          "description": "Hex accent color for the category header's left border (e.g. #ef4444).",
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{3,8}$"
+        }
+      },
+      "additionalProperties": false
+    },
     "itemId": {
       "description": "Optional stable identifier. Recommended for production configs so favourites and cooldowns survive reordering. Allowed characters: A-Z, a-z, 0-9, _, -. Omit to fall back to the positional {categoryId}-{index} scheme.",
       "type": "string",

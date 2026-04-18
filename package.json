@@ -2,13 +2,21 @@
   "name": "triggerforge",
   "version": "1.1.0",
   "private": true,
-  "description": "Webhook Trigger Interface - Trigger any webhook with a single click",
+  "description": "Self-hosted, offline-capable webhook trigger dashboard (PHP + vanilla JS, no build step).",
+  "homepage": "https://github.com/ByteSide/TriggerForge",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ByteSide/TriggerForge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ByteSide/TriggerForge/issues"
+  },
   "scripts": {
     "start": "php -S localhost:8000",
     "start:win": "C:\\php\\php.exe -S localhost:8000",
     "dev": "php -S localhost:8000"
   },
-  "keywords": ["webhook", "trigger", "automation", "dashboard", "n8n", "zapier", "make"],
+  "keywords": ["webhook", "trigger", "automation", "dashboard", "n8n", "zapier", "make", "pwa", "self-hosted"],
   "author": "ByteSide.io",
   "license": "MIT"
 }

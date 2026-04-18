@@ -428,6 +428,18 @@ php lib/validate-config.php path.php   # validates the given file
 
 ---
 
+## Changelog & releases
+
+See [CHANGELOG.md](CHANGELOG.md) for the full version history, upgrade
+notes, and breaking changes. Tagged releases live at
+[github.com/ByteSide/TriggerForge/releases](https://github.com/ByteSide/TriggerForge/releases).
+
+## Security
+
+Security issues should be reported privately — see
+[SECURITY.md](SECURITY.md) for the disclosure process and what's in
+scope.
+
 ## License
 
 [MIT](LICENSE) — free to use, modify, and distribute.
