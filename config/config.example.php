@@ -27,6 +27,12 @@
  *     'confirm' => false,                      // optional. Skip the "Ready to
  *                                              // fire?" modal for low-risk
  *                                              // endpoints. Default: true.
+ *     'payload' => ['env' => 'prod',           // optional. Extra JSON keys
+ *                   'channel' => '#ops'],       // merged into the outbound
+ *                                              // body alongside the default
+ *                                              // triggered_at / source /
+ *                                              // triggered_by. Config values
+ *                                              // win on key collision.
  *     'webhook_url_test' => 'https://your-automation.com/webhook-test/unique-id',
  *     'webhook_url_prod' => 'https://your-automation.com/webhook/unique-id',
  *     'description' => 'Optional: What this webhook does'

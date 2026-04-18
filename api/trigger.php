@@ -105,13 +105,16 @@ if (!is_array($config)) {
     ]);
     exit;
 }
-$validUrls = [];
-
-// Collect all configured URLs (Test + Prod).
+// Build a URL -> config-item map. We need the full item (not just its
+// URLs) so we can honour per-webhook overrides (payload, method, headers).
+// If the same URL is reused across items, later entries win — operator
+// error either way; keep behaviour deterministic.
+//
 // Keys starting with '_' are reserved metadata (e.g. '_meta' for a
 // category icon/color) and must not contribute to the whitelist —
 // otherwise a mistake like '_meta' => ['webhook_url_prod' => '...']
 // would silently authorise a URL.
+$urlToItem = [];
 foreach ($config as $category => $webhooks) {
     if (!is_array($webhooks)) {
         continue;
@@ -124,24 +127,45 @@ foreach ($config as $category => $webhooks) {
             continue;
         }
         if (isset($webhook['webhook_url_test']) && is_string($webhook['webhook_url_test'])) {
-            $validUrls[] = $webhook['webhook_url_test'];
+            $urlToItem[$webhook['webhook_url_test']] = $webhook;
         }
         if (isset($webhook['webhook_url_prod']) && is_string($webhook['webhook_url_prod'])) {
-            $validUrls[] = $webhook['webhook_url_prod'];
+            $urlToItem[$webhook['webhook_url_prod']] = $webhook;
         }
     }
 }
 
-// Validation: Is the URL in the whitelist? Strict comparison avoids any
+// Validation: Is the URL in the whitelist? Strict key lookup avoids any
 // PHP type-juggling surprises — both sides are already strings, but the
 // whitelist check is security-critical so defense in depth is cheap.
-if (!in_array($webhookUrl, $validUrls, true)) {
+if (!array_key_exists($webhookUrl, $urlToItem)) {
     http_response_code(403);
     echo json_encode([
         'success' => false,
         'message' => 'Webhook URL not authorized'
     ]);
     exit;
+}
+$matchedItem = $urlToItem[$webhookUrl];
+
+/**
+ * Build the outbound JSON body for a matched config item. Default keys
+ * (triggered_at, source, triggered_by) are always present; a per-item
+ * 'payload' array merges on top and wins on key collisions.
+ *
+ * Payload lives in config — never in the client request — so a rogue
+ * client can't smuggle their own body to a whitelisted URL.
+ */
+function tf_build_payload(array $item) {
+    $base = [
+        'triggered_at' => date('c'),
+        'source'       => 'TriggerForge',
+        'triggered_by' => isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : 'anonymous',
+    ];
+    if (isset($item['payload']) && is_array($item['payload'])) {
+        return array_merge($base, $item['payload']);
+    }
+    return $base;
 }
 
 // Send cURL request to webhook
@@ -191,17 +215,7 @@ curl_setopt_array($ch, $protocolOpts + [
         'Content-Type: application/json',
         'User-Agent: TriggerForge/1.0'
     ],
-    CURLOPT_POSTFIELDS => json_encode([
-        // ISO 8601 with timezone suffix so upstream parsers don't have to
-        // guess local vs. UTC. We default to UTC (top of file), so the
-        // result looks like "2024-01-15T10:30:00+00:00".
-        'triggered_at' => date('c'),
-        'source' => 'TriggerForge',
-        // Passes the HTTP Basic Auth username through so upstream audit
-        // logs can attribute each fire. 'anonymous' in local dev where
-        // Apache's .htaccess isn't evaluated.
-        'triggered_by' => $_SERVER['PHP_AUTH_USER'] ?? 'anonymous'
-    ]),
+    CURLOPT_POSTFIELDS => json_encode(tf_build_payload($matchedItem)),
     CURLOPT_WRITEFUNCTION => function ($ch, $data) use (&$bytesReceived, &$responseBody, $maxResponseBytes) {
         $bytesReceived += strlen($data);
         if ($bytesReceived > $maxResponseBytes) {
