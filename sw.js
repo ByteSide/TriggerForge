@@ -91,14 +91,24 @@ self.addEventListener('fetch', (event) => {
             // Stale-while-revalidate: return the cached copy immediately
             // (if any) and refresh the cache in the background for the
             // next visit. Falls back to the cached copy if the network
-            // is unreachable.
+            // is unreachable, or to a synthetic 503 when we have neither.
             const fetchPromise = fetch(req).then((resp) => {
                 if (resp && resp.ok && resp.type === 'basic') {
                     const clone = resp.clone();
                     caches.open(CACHE_NAME).then((cache) => cache.put(req, clone));
                 }
                 return resp;
-            }).catch(() => cached);
+            }).catch(() => {
+                if (cached) return cached;
+                // Offline + no cache — respondWith must resolve to a
+                // Response, so synthesise one instead of leaking
+                // `undefined` back to the browser.
+                return new Response('Network error and no cache entry.', {
+                    status: 503,
+                    statusText: 'Service Unavailable',
+                    headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+                });
+            });
             return cached || fetchPromise;
         })
     );

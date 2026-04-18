@@ -12,6 +12,24 @@
  */
 
 if (!function_exists('tf_version')) {
+    /**
+     * Strip anything that would be unsafe to embed into an HTTP header
+     * (CR/LF for header injection) or into a filename / log line. Keeps
+     * the result to a conservative charset even if git or package.json
+     * produce something exotic.
+     */
+    function tf_version_sanitize($v) {
+        $v = (string)$v;
+        // Kill CR/LF explicitly so `User-Agent: TriggerForge/<v>` can never
+        // sprout a fake second header.
+        $v = str_replace(["\r", "\n"], '', $v);
+        // Keep only the characters a real version string actually uses.
+        $v = preg_replace('/[^A-Za-z0-9._+\-]/', '', $v);
+        if ($v === null || $v === '') return '1.0.0';
+        // Cap length so a runaway git describe can't produce a 10 KB header.
+        return substr($v, 0, 64);
+    }
+
     function tf_version() {
         static $cached = null;
         if ($cached !== null) return $cached;
@@ -36,7 +54,7 @@ if (!function_exists('tf_version')) {
                         // Strip leading 'v' if present so output is consistent
                         // between "1.2.3" (package.json) and "v1.2.3-4-gabc" (git).
                         if ($v[0] === 'v' || $v[0] === 'V') $v = substr($v, 1);
-                        return $cached = $v;
+                        return $cached = tf_version_sanitize($v);
                     }
                 }
             }
@@ -49,7 +67,7 @@ if (!function_exists('tf_version')) {
             if ($raw !== false) {
                 $pkg = json_decode($raw, true);
                 if (is_array($pkg) && isset($pkg['version']) && is_string($pkg['version']) && $pkg['version'] !== '') {
-                    return $cached = $pkg['version'];
+                    return $cached = tf_version_sanitize($pkg['version']);
                 }
             }
         }

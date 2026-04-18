@@ -53,10 +53,15 @@ const DEFAULT_SETTINGS = {
 };
 
 /**
- * Deep-merge a persisted settings object against DEFAULT_SETTINGS. Keys in
+ * Merge a persisted settings object against DEFAULT_SETTINGS. Keys in
  * `saved` that are not in DEFAULT_SETTINGS are dropped (forward-compat: a
  * downgrade doesn't carry unknown keys forward). Missing keys fall back to
  * the default. Type-mismatched keys (e.g. saved theme === 42) fall back too.
+ *
+ * Handles one level of nested objects (a default of {…} takes each of its
+ * subKeys against the saved object). DEFAULT_SETTINGS is currently flat,
+ * but keeping the nested branch makes it safe to add `features: {...}`-style
+ * groups later without revisiting the merge logic.
  */
 function mergeSettings(saved) {
     const out = {};
@@ -64,9 +69,6 @@ function mergeSettings(saved) {
         const def = DEFAULT_SETTINGS[key];
         const val = saved && typeof saved === 'object' ? saved[key] : undefined;
         if (def !== null && typeof def === 'object' && !Array.isArray(def)) {
-            // Recurse into object values (e.g. `features`).
-            out[key] = mergeSettings.call(null, val);
-            // But keep the default's keys, not the saved's
             const merged = {};
             for (const subKey of Object.keys(def)) {
                 const subDef = def[subKey];
