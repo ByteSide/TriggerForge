@@ -225,7 +225,8 @@ function tf_resolve_method(array $item) {
  * are always dropped — cURL manages them.
  */
 function tf_build_headers(array $item, $method) {
-    $defaults = ['User-Agent: TriggerForge/1.0'];
+    require_once __DIR__ . '/../lib/version.php';
+    $defaults = ['User-Agent: TriggerForge/' . tf_version() . ' (+https://byteside.io)'];
     if ($method !== 'GET') {
         $defaults[] = 'Content-Type: application/json';
     }

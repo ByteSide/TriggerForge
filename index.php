@@ -20,6 +20,7 @@ if (!is_array($config)) {
 
 // HTML render helpers (button / category markup).
 require __DIR__ . '/lib/render.php';
+require __DIR__ . '/lib/version.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -299,7 +300,7 @@ require __DIR__ . '/lib/render.php';
                     <div class="footer-logo">
                         <span class="logo logo--small">Trigger<span class="logo__forge">Forge</span></span>
                     </div>
-                    <p class="footer-version">v1.0.0</p>
+                    <p class="footer-version">v<?php echo htmlspecialchars(tf_version()); ?></p>
                 </div>
             </div>
             
