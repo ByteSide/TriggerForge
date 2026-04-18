@@ -2195,6 +2195,104 @@ body.test-mode .confirmation-modal {
     }
 }
 
+/* === Chain Button (type: chain — runs a sequence of webhooks) === */
+.chain-btn {
+    position: relative;
+    width: 100%;
+    min-height: 64px;
+    padding: var(--space-4) var(--space-6);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: transparent;
+    border: 1px dashed var(--color-primary);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    text-align: left;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    overflow: hidden;
+    touch-action: manipulation;
+}
+
+.chain-btn > * {
+    position: relative;
+    z-index: 1;
+}
+
+.chain-btn-progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, rgba(253, 125, 0, 0.15) 0%, rgba(253, 125, 0, 0.3) 100%);
+    transition: width var(--transition-base);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.chain-btn-icon {
+    font-size: 1.5rem;
+    color: var(--color-primary);
+}
+
+.chain-btn-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.4;
+}
+
+.chain-btn-steps {
+    padding: 2px 8px;
+    background: rgba(253, 125, 0, 0.15);
+    color: var(--color-primary);
+    border-radius: var(--radius-full);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+@media (hover: hover) {
+    .chain-btn:hover {
+        border-style: solid;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(253, 125, 0, 0.25);
+    }
+    .chain-btn:hover .chain-btn-icon {
+        animation: pulse 1.2s infinite;
+    }
+}
+
+.chain-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.chain-btn.chain-running {
+    cursor: wait;
+    border-style: solid;
+    animation: pulseGlow 1.2s infinite;
+}
+
+.chain-btn.chain-running .chain-btn-icon {
+    animation: spin 1.6s linear infinite;
+}
+
+.chain-btn:disabled {
+    opacity: 0.75;
+    cursor: not-allowed;
+}
+
 /* === Bulk Fire Bar (shown while shift-click multi-select is active) === */
 .bulk-fire-bar {
     position: fixed;
@@ -2324,6 +2422,7 @@ body.test-mode .confirmation-modal {
    dragstart, and an orange border to mark the drop target. */
 .trigger-btn[draggable="true"],
 .custom-link-btn[draggable="true"],
+.chain-btn[draggable="true"],
 .favorite-btn[draggable="true"],
 .favorite-link-btn[draggable="true"] {
     cursor: grab;
@@ -2331,6 +2430,7 @@ body.test-mode .confirmation-modal {
 
 .trigger-btn.dragging,
 .custom-link-btn.dragging,
+.chain-btn.dragging,
 .favorite-btn.dragging,
 .favorite-link-btn.dragging {
     opacity: 0.4;
@@ -2339,6 +2439,7 @@ body.test-mode .confirmation-modal {
 
 .trigger-btn.drag-over,
 .custom-link-btn.drag-over,
+.chain-btn.drag-over,
 .favorite-btn.drag-over,
 .favorite-link-btn.drag-over {
     outline: 2px dashed var(--color-primary);

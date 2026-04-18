@@ -115,6 +115,45 @@ function tf_render_webhook_button(array $item, $itemId, $categoryName) {
     <?php
 }
 
+/**
+ * Emit a chain button. Chains are client-side sequences of webhook fires
+ * — the backend is unaware of them, so no URL attributes are rendered.
+ * Steps are serialised as a JSON string in data-chain-steps so app.js
+ * can parse them at click time.
+ */
+function tf_render_chain_button(array $item, $itemId, $categoryName) {
+    $itemName = (string)($item['name'] ?? '');
+    $itemDesc = (string)($item['description'] ?? $itemName);
+    $steps = isset($item['steps']) && is_array($item['steps']) ? $item['steps'] : array();
+    $stepsJson = json_encode(
+        $steps,
+        JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE
+    );
+    $icon = tf_icon($item['icon'] ?? null, 'bx-git-branch');
+    ?>
+
+                                    <!-- Chain Button -->
+                                    <button
+                                        type="button"
+                                        class="chain-btn"
+                                        draggable="true"
+                                        data-type="chain"
+                                        data-chain-id="<?php echo tf_e($itemId); ?>"
+                                        data-chain-name="<?php echo tf_e($itemName); ?>"
+                                        data-category="<?php echo tf_e($categoryName); ?>"
+                                        data-chain-steps="<?php echo tf_e($stepsJson); ?>"
+                                        title="<?php echo tf_e($itemDesc); ?>"
+                                        aria-label="<?php echo tf_e($itemName); ?>"
+                                    >
+                                        <span class="chain-btn-progress" aria-hidden="true"></span>
+                                        <i class='bx <?php echo tf_e($icon); ?> chain-btn-icon'></i>
+                                        <span class="chain-btn-text"><?php echo tf_e($itemName); ?></span>
+                                        <span class="chain-btn-steps" aria-label="<?php echo (int)count($steps); ?> steps"><?php echo (int)count($steps); ?>&nbsp;steps</span>
+                                    </button>
+
+    <?php
+}
+
 /** Emit a custom-link button (opens URL in a new tab, no backend call). */
 function tf_render_link_button(array $item, $itemId, $categoryName) {
     $itemName = (string)($item['name'] ?? '');

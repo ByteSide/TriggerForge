@@ -283,6 +283,8 @@ require __DIR__ . '/lib/render.php';
                                         <?php tf_render_webhook_button($item, $itemId, $categoryNameStr); ?>
                                     <?php elseif ($type === 'link'): ?>
                                         <?php tf_render_link_button($item, $itemId, $categoryNameStr); ?>
+                                    <?php elseif ($type === 'chain'): ?>
+                                        <?php tf_render_chain_button($item, $itemId, $categoryNameStr); ?>
                                     <?php endif; ?>
                                 <?php endforeach; ?>
                     <?php tf_render_category_close(); ?>

@@ -58,6 +58,20 @@
  *     'url' => 'https://example.com/page',
  *     'description' => 'Optional: Description of the link'
  * ]
+ *
+ * Structure for Webhook Chains:
+ * [
+ *     'type' => 'chain',
+ *     'id'   => 'deploy-sequence',
+ *     'name' => 'Deploy → Notify',
+ *     'icon' => 'bx-git-branch',
+ *     'steps' => [                             // fires each referenced webhook
+ *         ['ref' => 'build-start'],             // in order, optionally waiting
+ *         ['ref' => 'wait-for-ci',              // 'delayMs' ms after each step
+ *          'delayMs' => 30000],                 // before starting the next
+ *         ['ref' => 'notify-team'],
+ *     ],
+ * ]
  */
 
 return [

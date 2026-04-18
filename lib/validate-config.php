@@ -26,7 +26,7 @@ if (!function_exists('tf_validate_config')) {
 function tf_validate_config(array $config) {
     $errors = [];
     $seenExplicitIds = [];
-    $allowedTypes = ['webhook', 'link'];
+    $allowedTypes = ['webhook', 'link', 'chain'];
     $allowedMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
     $urlPattern = '#^https?://[^\s]+$#i';
     $linkProtos = '#^(https?|mailto|tel)://?[^\s]+$#i';
@@ -150,6 +150,23 @@ function tf_validate_config(array $config) {
                     $errors[] = "$itemLabel.url: required non-empty URL";
                 } elseif (!preg_match($linkProtos, $item['url'])) {
                     $errors[] = "$itemLabel.url: only http(s)/mailto/tel protocols are allowed";
+                }
+            } elseif ($type === 'chain') {
+                if (!isset($item['steps']) || !is_array($item['steps']) || count($item['steps']) === 0) {
+                    $errors[] = "$itemLabel.steps: required non-empty array of step objects";
+                } else {
+                    foreach ($item['steps'] as $si => $step) {
+                        if (!is_array($step)) {
+                            $errors[] = "$itemLabel.steps[$si]: must be an object";
+                            continue;
+                        }
+                        if (!isset($step['ref']) || !is_string($step['ref']) || !preg_match($idPattern, $step['ref'])) {
+                            $errors[] = "$itemLabel.steps[$si].ref: required item id (A-Za-z0-9_-)";
+                        }
+                        if (isset($step['delayMs']) && (!is_int($step['delayMs']) || $step['delayMs'] < 0 || $step['delayMs'] > 600000)) {
+                            $errors[] = "$itemLabel.steps[$si].delayMs: integer between 0 and 600000 (10 minutes)";
+                        }
+                    }
                 }
             }
         }

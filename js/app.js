@@ -163,6 +163,7 @@ function initTriggerForge() {
     initTriggerWidgets();
     initDragSort();
     applyItemOrder();
+    initChainButtons();
     initHistory();
     initBulkFire();
     initScrollToTop();
@@ -703,6 +704,116 @@ function initWebhookButtons() {
             triggerWebhook(this);
         });
     });
+}
+
+// === Webhook Chains ===
+// Client-side sequence runner. The backend knows nothing about chains —
+// each step resolves to an existing webhook item and fires through the
+// regular trigger.php path (no per-item confirm — the chain confirm is
+// sufficient). delayMs is a post-step wait, not a request timeout.
+function initChainButtons() {
+    document.querySelectorAll('.chain-btn').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            // Shift-click on chains is reserved (bulk-fire doesn't make
+            // sense for chains; skip silently).
+            if (e.shiftKey) { e.preventDefault(); return; }
+            let steps = [];
+            try { steps = JSON.parse(btn.getAttribute('data-chain-steps') || '[]'); }
+            catch (err) { /* fall through */ }
+            const name = btn.getAttribute('data-chain-name') || 'Chain';
+            if (!Array.isArray(steps) || steps.length === 0) {
+                showToast('Chain "' + name + '" has no steps', 'warning');
+                return;
+            }
+            confirmChainFire(btn, name, steps);
+        });
+    });
+}
+
+function confirmChainFire(chainBtn, chainName, steps) {
+    const body = document.createElement('div');
+    const intro = document.createElement('p');
+    intro.textContent = 'Run the ' + steps.length + '-step chain "' + chainName + '"? Each step fires through the normal webhook endpoint. Steps whose referenced item is missing will be skipped.';
+    body.appendChild(intro);
+    const ol = document.createElement('ol');
+    ol.style.margin = '0';
+    ol.style.paddingLeft = '1.25em';
+    steps.forEach((step) => {
+        const li = document.createElement('li');
+        const ref = step && typeof step.ref === 'string' ? step.ref : '';
+        const target = ref ? document.querySelector('.trigger-btn[data-webhook-id="' + CSS.escape(ref) + '"]') : null;
+        const name = target ? (target.getAttribute('data-webhook-name') || ref) : '(missing: ' + ref + ')';
+        const delay = step && step.delayMs > 0 ? ' — then wait ' + Math.round(step.delayMs / 1000 * 10) / 10 + ' s' : '';
+        li.textContent = name + delay;
+        if (!target) li.style.color = 'var(--error)';
+        ol.appendChild(li);
+    });
+    body.appendChild(ol);
+
+    openModal({
+        title: 'Run chain',
+        icon: 'bx-git-branch',
+        bodyEl: body,
+        actions: [
+            { label: 'Cancel', variant: 'default', icon: 'bx-x' },
+            { label: 'Run chain', variant: 'primary', icon: 'bx-play',
+              onClick: () => executeChain(chainBtn, chainName, steps) }
+        ]
+    });
+}
+
+function executeChain(chainBtn, chainName, steps) {
+    if (chainBtn.classList.contains('chain-running')) {
+        showToast('Chain "' + chainName + '" is already running', 'warning');
+        return;
+    }
+    chainBtn.classList.add('chain-running');
+    chainBtn.disabled = true;
+    const progressEl = chainBtn.querySelector('.chain-btn-progress');
+
+    let i = 0;
+    let fired = 0, skipped = 0;
+
+    const done = () => {
+        chainBtn.classList.remove('chain-running');
+        chainBtn.disabled = false;
+        if (progressEl) {
+            // Brief held-full flash before resetting, so users perceive completion.
+            progressEl.style.width = '100%';
+            setTimeout(() => { progressEl.style.width = '0%'; }, 400);
+        }
+        const kind = skipped > 0 ? 'warning' : 'success';
+        showToast('Chain "' + chainName + '": ' + fired + '/' + steps.length + ' fired'
+            + (skipped ? ', ' + skipped + ' skipped' : ''), kind);
+    };
+
+    const runStep = () => {
+        if (i >= steps.length) { done(); return; }
+        const step = steps[i];
+        const ref = step && typeof step.ref === 'string' ? step.ref : '';
+        const target = ref ? document.querySelector('.trigger-btn[data-webhook-id="' + CSS.escape(ref) + '"]') : null;
+        if (progressEl) progressEl.style.width = ((i + 1) / steps.length * 100) + '%';
+
+        const advance = () => {
+            i++;
+            const wait = step && typeof step.delayMs === 'number' && step.delayMs > 0 ? step.delayMs : 0;
+            setTimeout(runStep, wait);
+        };
+
+        if (!target) { skipped++; advance(); return; }
+        if (isOnCooldown(ref)) { skipped++; advance(); return; }
+
+        const urlProd = target.getAttribute('data-webhook-url-prod');
+        const urlTest = target.getAttribute('data-webhook-url-test');
+        const url = state.isTestMode ? urlTest : urlProd;
+        const name = target.getAttribute('data-webhook-name') || ref;
+        if (!url) { skipped++; advance(); return; }
+
+        executeWebhook(target, ref, url, name);
+        fired++;
+        advance();
+    };
+    runStep();
 }
 
 // === Bulk Fire ===
@@ -1702,7 +1813,7 @@ function initDragSort() {
     let dragged = null;
     let dragCategory = null;
 
-    document.querySelectorAll('.trigger-btn, .custom-link-btn').forEach((btn) => {
+    document.querySelectorAll('.trigger-btn, .custom-link-btn, .chain-btn').forEach((btn) => {
         btn.addEventListener('dragstart', (e) => {
             dragged = btn;
             const section = btn.closest('.category-section');
@@ -1748,7 +1859,7 @@ function initDragSort() {
             if (targetCat !== dragCategory) return;
 
             // Build the current visual order (respects any prior itemOrder).
-            const items = Array.from(section.querySelectorAll('.trigger-btn, .custom-link-btn'));
+            const items = Array.from(section.querySelectorAll('.trigger-btn, .custom-link-btn, .chain-btn'));
             items.sort((a, b) => {
                 const oa = parseFloat(a.style.order || '9999');
                 const ob = parseFloat(b.style.order || '9999');
@@ -1766,7 +1877,7 @@ function initDragSort() {
             items.splice(fromIdx < toIdx ? toIdx - 1 : toIdx, 0, dragged);
 
             const newOrder = items.map((b2) =>
-                b2.getAttribute('data-webhook-id') || b2.getAttribute('data-link-id')
+                b2.getAttribute('data-webhook-id') || b2.getAttribute('data-link-id') || b2.getAttribute('data-chain-id')
             ).filter(Boolean);
             state.itemOrder[targetCat] = newOrder;
             saveState();
@@ -1792,8 +1903,8 @@ function applyItemOrder() {
         const indexMap = {};
         desired.forEach((id, i) => { indexMap[id] = i; });
         let fallback = desired.length;
-        section.querySelectorAll('.trigger-btn, .custom-link-btn').forEach((btn) => {
-            const id = btn.getAttribute('data-webhook-id') || btn.getAttribute('data-link-id');
+        section.querySelectorAll('.trigger-btn, .custom-link-btn, .chain-btn').forEach((btn) => {
+            const id = btn.getAttribute('data-webhook-id') || btn.getAttribute('data-link-id') || btn.getAttribute('data-chain-id');
             if (!id) return;
             btn.style.order = id in indexMap ? String(indexMap[id]) : String(fallback++);
         });
