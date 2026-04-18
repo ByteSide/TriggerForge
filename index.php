@@ -148,6 +148,14 @@ require __DIR__ . '/lib/render.php';
                 <?php foreach ($config as $categoryName => $webhooks): ?>
                     <?php
                         if (!is_array($webhooks)) { continue; }
+                        // Pull out optional '_meta' (category icon / color /
+                        // future category-level options) before iterating
+                        // items. Still lives inside $webhooks — we just skip
+                        // it in the item loop below.
+                        $categoryMeta = array();
+                        if (isset($webhooks['_meta']) && is_array($webhooks['_meta'])) {
+                            $categoryMeta = $webhooks['_meta'];
+                        }
                         $categoryIdx++;
                         $categoryNameStr = (string)$categoryName;
                         // Create URL-safe ID from category name (guaranteed unique).
@@ -166,13 +174,15 @@ require __DIR__ . '/lib/render.php';
                         }
                         $usedCategoryIds[] = $categoryId;
                     ?>
-                    <?php tf_render_category_open($categoryId, $categoryNameStr); ?>
+                    <?php tf_render_category_open($categoryId, $categoryNameStr, $categoryMeta); ?>
                                 <?php
                                     $usedItemIds = [];
                                     $itemOffset = 0;
                                 ?>
                                 <?php foreach ($webhooks as $index => $item): ?>
                                     <?php
+                                        // Skip the category-level _meta key; it's not a button.
+                                        if ($index === '_meta') { continue; }
                                         if (!is_array($item)) { continue; }
                                         $itemOffset++;
                                         // Determine type (default: webhook for backwards compatibility)

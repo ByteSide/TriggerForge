@@ -107,12 +107,19 @@ if (!is_array($config)) {
 }
 $validUrls = [];
 
-// Collect all configured URLs (Test + Prod)
+// Collect all configured URLs (Test + Prod).
+// Keys starting with '_' are reserved metadata (e.g. '_meta' for a
+// category icon/color) and must not contribute to the whitelist —
+// otherwise a mistake like '_meta' => ['webhook_url_prod' => '...']
+// would silently authorise a URL.
 foreach ($config as $category => $webhooks) {
     if (!is_array($webhooks)) {
         continue;
     }
-    foreach ($webhooks as $webhook) {
+    foreach ($webhooks as $key => $webhook) {
+        if (is_string($key) && strlen($key) > 0 && $key[0] === '_') {
+            continue;
+        }
         if (!is_array($webhook)) {
             continue;
         }

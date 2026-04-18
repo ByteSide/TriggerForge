@@ -52,6 +52,11 @@ return [
     // n8n Webhooks Example
     // =========================================
     'Automation' => [
+        // Optional per-category metadata. The '_meta' key is reserved and
+        // skipped during item iteration.
+        //   '_meta' => [
+        //       'icon' => 'bx-cog',            // Boxicon class for the category header
+        //   ],
         [
             'type' => 'webhook',
             'name' => 'Daily Report',
