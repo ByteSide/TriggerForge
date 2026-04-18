@@ -12,7 +12,8 @@ const state = {
     settings: {},
     lastTriggered: {},
     triggerCounts: {},
-    itemOrder: {}  // per-category arrays of item ids, produced by drag-sort
+    itemOrder: {}, // per-category arrays of item ids, produced by drag-sort
+    history: []    // newest-first ring buffer of the last MAX_HISTORY fires
 };
 
 // === Constants ===
@@ -20,6 +21,7 @@ const COOLDOWN_DURATION = 10000; // 10 seconds
 const TOAST_DURATION = 4000; // 4 seconds
 const MAX_FAVORITES = 10;
 const MAX_TOASTS = 5; // cap concurrent toasts to prevent DOM bloat on spam
+const MAX_HISTORY = 50; // ring-buffer cap for state.history
 const ALLOWED_LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 
 // === Settings ===
@@ -161,6 +163,7 @@ function initTriggerForge() {
     initTriggerWidgets();
     initDragSort();
     applyItemOrder();
+    initHistory();
     initScrollToTop();
 
     // Restore cooldowns from previous session
@@ -230,6 +233,17 @@ function loadState() {
         {},
         v => v !== null && typeof v === 'object' && !Array.isArray(v)
     );
+    state.history = loadStateKey(
+        'triggerforge_history',
+        [],
+        v => Array.isArray(v)
+    );
+    if (state.history.length > MAX_HISTORY) {
+        // Paranoia: if a future build increased MAX_HISTORY and then rolled
+        // back, trim back on boot rather than ship the oversize buffer
+        // around forever.
+        state.history.length = MAX_HISTORY;
+    }
 }
 
 function saveState() {
@@ -243,7 +257,8 @@ function saveState() {
         ['triggerforge_settings', state.settings],
         ['triggerforge_last_triggered', state.lastTriggered],
         ['triggerforge_trigger_counts', state.triggerCounts],
-        ['triggerforge_item_order', state.itemOrder]
+        ['triggerforge_item_order', state.itemOrder],
+        ['triggerforge_history', state.history]
     ];
     writes.forEach(([key, value]) => {
         try {
@@ -758,6 +773,7 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
     // real response always arrives well before this.
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 40000);
+    const startedAt = Date.now();
 
     fetch('api/trigger.php', {
         method: 'POST',
@@ -782,15 +798,16 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
         button.classList.remove('loading');
         if (icon) icon.className = originalIconClass;
 
+        const durationMs = Date.now() - startedAt;
         const payload = (data && typeof data === 'object') ? data : {};
         if (payload.success) {
             // Success state
-            handleSuccess(button, webhookName, payload);
+            handleSuccess(button, webhookName, payload, durationMs);
             startCooldown(webhookId, button);
         } else {
             // Error state
             const msg = typeof payload.message === 'string' ? payload.message : 'Unknown error';
-            handleError(button, msg, payload);
+            handleError(button, msg, payload, durationMs);
             button.disabled = false;
         }
     })
@@ -802,12 +819,15 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
         const msg = error.name === 'AbortError'
             ? 'Request timed out'
             : 'Connection error: ' + error.message;
-        handleError(button, msg);
+        const durationMs = Date.now() - startedAt;
+        // No server payload on a network failure — synthesise a minimal
+        // one so the history row still records the attempt + duration.
+        handleError(button, msg, { http_code: 0, response_body: '', response_headers: {} }, durationMs);
         button.disabled = false;
     });
 }
 
-function handleSuccess(button, webhookName, payload) {
+function handleSuccess(button, webhookName, payload, durationMs) {
     // Record stats BEFORE the visual flash so even a very quick re-render
     // sees the updated counters. Guard on webhookId because the legacy
     // DOM structure lets us reach this without one in edge cases.
@@ -819,6 +839,7 @@ function handleSuccess(button, webhookName, payload) {
         updateLastTriggeredFor(button);
         updateTriggerCountFor(button);
     }
+    pushHistoryEntry(button, webhookName, 'success', payload, durationMs);
 
     // Change icon temporarily
     const icon = button.querySelector('.trigger-btn-icon');
@@ -847,7 +868,7 @@ function handleSuccess(button, webhookName, payload) {
     }, 1000);
 }
 
-function handleError(button, message, payload) {
+function handleError(button, message, payload, durationMs) {
     // Change icon temporarily
     const icon = button.querySelector('.trigger-btn-icon');
     const originalIconClass = icon ? icon.className : '';
@@ -864,6 +885,8 @@ function handleError(button, message, payload) {
         ? { label: 'Details', onClick: () => openResponseViewer(webhookName, payload, false) }
         : null;
     showToast(`✗ Error: ${message}`, 'error', action);
+
+    pushHistoryEntry(button, webhookName, 'error', payload, durationMs, message);
 
     // Reset after 1 second. Same rationale as handleSuccess: bail out if
     // the button has already moved on to another state.
@@ -1825,6 +1848,228 @@ function openResponseViewer(webhookName, payload, success) {
         bodyEl: container,
         actions: [{ label: 'Close', variant: 'default', icon: 'bx-x' }]
     });
+}
+
+// === Trigger History ===
+// Newest-first ring buffer of the last MAX_HISTORY fires (success + error),
+// persisted in localStorage. Rendered on demand in a slide-in drawer
+// that re-uses openModal for per-entry details via the response viewer.
+function pushHistoryEntry(button, webhookName, status, payload, durationMs, errorMessage) {
+    const p = payload || {};
+    const webhookId = button ? button.getAttribute('data-webhook-id') : null;
+    const url = button
+        ? (state.isTestMode
+            ? button.getAttribute('data-webhook-url-test')
+            : button.getAttribute('data-webhook-url-prod')) || ''
+        : '';
+    const entry = {
+        id: webhookId || '',
+        name: webhookName || 'Webhook',
+        url: url,
+        ts: Date.now(),
+        status: status === 'success' ? 'success' : 'error',
+        httpCode: typeof p.http_code === 'number' ? p.http_code : 0,
+        durationMs: typeof durationMs === 'number' ? durationMs : 0,
+        mode: state.isTestMode ? 'test' : 'prod',
+        // Carry the response envelope so the details modal works even
+        // when the config item has since been renamed / removed.
+        responseBody: typeof p.response_body === 'string' ? p.response_body : '',
+        responseHeaders: p.response_headers && typeof p.response_headers === 'object' ? p.response_headers : {},
+        responseContentType: typeof p.response_content_type === 'string' ? p.response_content_type : '',
+        errorMessage: errorMessage || ''
+    };
+    state.history.unshift(entry);
+    if (state.history.length > MAX_HISTORY) state.history.length = MAX_HISTORY;
+    saveState();
+    updateHistoryBadge();
+    if (document.getElementById('historyDrawer')?.classList.contains('active')) {
+        renderHistoryList();
+    }
+}
+
+function initHistory() {
+    const btn = document.getElementById('historyBtn');
+    const drawer = document.getElementById('historyDrawer');
+    const btnClose = document.getElementById('historyCloseBtn');
+    const btnClear = document.getElementById('historyClearBtn');
+    if (!btn || !drawer) return;
+
+    btn.addEventListener('click', toggleHistoryDrawer);
+    if (btnClose) btnClose.addEventListener('click', closeHistoryDrawer);
+    if (btnClear) {
+        btnClear.addEventListener('click', () => {
+            if (state.history.length === 0) return;
+            if (!confirm('Clear the trigger history? This only removes local records — fires already completed upstream stay fired.')) return;
+            state.history = [];
+            saveState();
+            renderHistoryList();
+            updateHistoryBadge();
+            showToast('History cleared', 'info');
+        });
+    }
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && drawer.classList.contains('active')) {
+            closeHistoryDrawer();
+        }
+    });
+    updateHistoryBadge();
+}
+
+function toggleHistoryDrawer() {
+    const drawer = document.getElementById('historyDrawer');
+    if (!drawer) return;
+    if (drawer.classList.contains('active')) closeHistoryDrawer();
+    else openHistoryDrawer();
+}
+
+function openHistoryDrawer() {
+    const drawer = document.getElementById('historyDrawer');
+    if (!drawer) return;
+    renderHistoryList();
+    drawer.classList.add('active');
+    drawer.removeAttribute('aria-hidden');
+    drawer.removeAttribute('inert');
+    const btn = document.getElementById('historyBtn');
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+}
+
+function closeHistoryDrawer() {
+    const drawer = document.getElementById('historyDrawer');
+    if (!drawer) return;
+    drawer.classList.remove('active');
+    drawer.setAttribute('aria-hidden', 'true');
+    drawer.setAttribute('inert', '');
+    const btn = document.getElementById('historyBtn');
+    if (btn) btn.setAttribute('aria-expanded', 'false');
+}
+
+function updateHistoryBadge() {
+    const badge = document.getElementById('historyBtnCount');
+    if (!badge) return;
+    const errCount = state.history.filter(e => e && e.status === 'error').length;
+    if (errCount <= 0) {
+        badge.hidden = true;
+        badge.textContent = '';
+    } else {
+        badge.hidden = false;
+        badge.textContent = errCount > 99 ? '99+' : String(errCount);
+    }
+}
+
+function renderHistoryList() {
+    const list = document.getElementById('historyList');
+    if (!list) return;
+    list.innerHTML = '';
+    if (state.history.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'history-empty';
+        empty.innerHTML = '<i class="bx bx-history"></i><p>No trigger history yet.<br>Fire a webhook to see it here.</p>';
+        list.appendChild(empty);
+        return;
+    }
+    state.history.forEach((entry, idx) => {
+        list.appendChild(renderHistoryRow(entry, idx));
+    });
+}
+
+function renderHistoryRow(entry, idx) {
+    const row = document.createElement('article');
+    row.className = 'history-row history-row-' + entry.status;
+    row.setAttribute('role', 'listitem');
+
+    // Status dot
+    const dot = document.createElement('i');
+    dot.className = 'bx history-row-dot ' + (entry.status === 'success' ? 'bx-check-circle' : 'bx-x-circle');
+    dot.setAttribute('aria-hidden', 'true');
+    row.appendChild(dot);
+
+    // Main block: name + meta
+    const main = document.createElement('div');
+    main.className = 'history-row-main';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'history-row-name';
+    nameEl.textContent = entry.name;
+    main.appendChild(nameEl);
+
+    const meta = document.createElement('div');
+    meta.className = 'history-row-meta';
+    const when = document.createElement('span');
+    when.textContent = formatRelativeTime(entry.ts);
+    meta.appendChild(when);
+    if (entry.httpCode) {
+        const code = document.createElement('span');
+        code.textContent = 'HTTP ' + entry.httpCode;
+        meta.appendChild(code);
+    }
+    if (entry.durationMs) {
+        const dur = document.createElement('span');
+        dur.textContent = entry.durationMs + ' ms';
+        meta.appendChild(dur);
+    }
+    const mode = document.createElement('span');
+    mode.className = 'history-row-mode history-row-mode-' + entry.mode;
+    mode.textContent = entry.mode.toUpperCase();
+    meta.appendChild(mode);
+    main.appendChild(meta);
+
+    if (entry.status === 'error' && entry.errorMessage) {
+        const err = document.createElement('div');
+        err.className = 'history-row-errmsg';
+        err.textContent = entry.errorMessage;
+        main.appendChild(err);
+    }
+    row.appendChild(main);
+
+    // Actions column
+    const actions = document.createElement('div');
+    actions.className = 'history-row-actions';
+
+    // Retry (only if we can still find the original button)
+    const targetBtn = entry.id
+        ? document.querySelector('.trigger-btn[data-webhook-id="' + CSS.escape(entry.id) + '"]')
+        : null;
+    if (targetBtn) {
+        const retryBtn = document.createElement('button');
+        retryBtn.type = 'button';
+        retryBtn.className = 'history-action-btn';
+        retryBtn.title = 'Retry (fires through the normal confirm/cooldown flow)';
+        retryBtn.setAttribute('aria-label', 'Retry ' + entry.name);
+        retryBtn.innerHTML = "<i class='bx bx-revision' aria-hidden='true'></i>";
+        retryBtn.addEventListener('click', () => {
+            closeHistoryDrawer();
+            triggerWebhook(targetBtn);
+        });
+        actions.appendChild(retryBtn);
+    } else if (entry.id) {
+        const stale = document.createElement('span');
+        stale.className = 'history-row-stale';
+        stale.title = 'Webhook no longer in config';
+        stale.textContent = '—';
+        actions.appendChild(stale);
+    }
+
+    // Details (response viewer)
+    if (_responseHasDetails({ response_body: entry.responseBody, response_headers: entry.responseHeaders })
+        || entry.httpCode) {
+        const detailsBtn = document.createElement('button');
+        detailsBtn.type = 'button';
+        detailsBtn.className = 'history-action-btn';
+        detailsBtn.title = 'Show response details';
+        detailsBtn.setAttribute('aria-label', 'Show details for ' + entry.name);
+        detailsBtn.innerHTML = "<i class='bx bx-show' aria-hidden='true'></i>";
+        detailsBtn.addEventListener('click', () => {
+            openResponseViewer(entry.name, {
+                http_code: entry.httpCode,
+                response_body: entry.responseBody,
+                response_headers: entry.responseHeaders,
+                response_content_type: entry.responseContentType,
+                success: entry.status === 'success'
+            }, entry.status === 'success');
+        });
+        actions.appendChild(detailsBtn);
+    }
+    row.appendChild(actions);
+    return row;
 }
 
 // === Trigger Widgets (Last-Triggered + Counter) ===

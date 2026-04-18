@@ -88,8 +88,14 @@ require __DIR__ . '/lib/render.php';
         <header class="header">
             <h1 class="logo">Trigger<span class="logo__forge">Forge</span></h1>
 
-            <!-- Settings (anchored top-right of the header) -->
-            <button type="button" class="settings-btn" id="settingsBtn" aria-label="Open settings" title="Settings">
+            <!-- History drawer toggle (anchored top-right of the header) -->
+            <button type="button" class="header-icon-btn history-btn" id="historyBtn" aria-label="Open trigger history" aria-expanded="false" title="History">
+                <i class='bx bx-history'></i>
+                <span class="header-icon-badge" id="historyBtnCount" hidden>0</span>
+            </button>
+
+            <!-- Settings (next to history) -->
+            <button type="button" class="header-icon-btn settings-btn" id="settingsBtn" aria-label="Open settings" title="Settings">
                 <i class='bx bx-cog'></i>
             </button>
 
@@ -335,6 +341,23 @@ require __DIR__ . '/lib/render.php';
         </div>
     </div>
     
+    <!-- History drawer — slide-in panel from the right. Populated by
+         renderHistoryList() from state.history (localStorage). -->
+    <aside class="history-drawer" id="historyDrawer" role="complementary" aria-labelledby="historyDrawerTitle" aria-hidden="true" inert>
+        <header class="history-drawer-header">
+            <i class='bx bx-history history-drawer-icon' aria-hidden="true"></i>
+            <h3 class="history-drawer-title" id="historyDrawerTitle">Trigger history</h3>
+            <button type="button" class="history-drawer-action" id="historyClearBtn" title="Clear history">
+                <i class='bx bx-trash' aria-hidden="true"></i>
+                <span>Clear</span>
+            </button>
+            <button type="button" class="history-drawer-close" id="historyCloseBtn" aria-label="Close history">
+                <i class='bx bx-x' aria-hidden="true"></i>
+            </button>
+        </header>
+        <div class="history-drawer-body" id="historyList" role="list"></div>
+    </aside>
+
     <!-- Generic modal — title / body / action-row. Used by the response
          viewer, the keyboard-shortcut cheatsheet, and any later feature
          that needs a dialog. Content is populated by openModal() in app.js. -->
