@@ -288,7 +288,10 @@ function initTriggerForge() {
     initKeyboardShortcuts();
     initTriggerWidgets();
     initDragSort();
-    applyItemOrder();
+    // applySettings() above already called applySortOrder(), which
+    // delegates to applyItemOrder() when the user picked 'config'
+    // order, and otherwise wins over it. A second applyItemOrder()
+    // here would partially overwrite a non-config sort — remove.
     initChainButtons();
     initHistory();
     initBulkFire();
