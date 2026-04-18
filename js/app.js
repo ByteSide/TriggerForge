@@ -164,6 +164,7 @@ function initTriggerForge() {
     initDragSort();
     applyItemOrder();
     initHistory();
+    initBulkFire();
     initScrollToTop();
 
     // Restore cooldowns from previous session
@@ -683,9 +684,18 @@ function updateFavoriteStars() {
 // === Webhook Buttons ===
 function initWebhookButtons() {
     const triggerButtons = document.querySelectorAll('.trigger-btn');
-    
+
     triggerButtons.forEach(button => {
         button.addEventListener('click', function(e) {
+            // Shift-click toggles the bulk-fire multi-select rather than
+            // opening the confirm modal. The floating bar at the bottom
+            // offers a single-confirm for firing everything sequentially.
+            if (e.shiftKey) {
+                e.preventDefault();
+                const id = this.getAttribute('data-webhook-id');
+                if (id) toggleBulkSelection(this, id);
+                return;
+            }
             // Ignore if clicking on favorite star
             if (e.target.classList.contains('trigger-btn-favorite')) {
                 return;
@@ -693,6 +703,129 @@ function initWebhookButtons() {
             triggerWebhook(this);
         });
     });
+}
+
+// === Bulk Fire ===
+// In-memory only — Set of webhook ids currently selected. Deliberately
+// non-persistent: users don't expect a multi-select to survive a page
+// reload, and keeping it ephemeral avoids stale selections pointing to
+// removed items.
+const bulkSelection = new Set();
+
+function toggleBulkSelection(button, id) {
+    if (bulkSelection.has(id)) {
+        bulkSelection.delete(id);
+        button.classList.remove('bulk-selected');
+    } else {
+        bulkSelection.add(id);
+        button.classList.add('bulk-selected');
+    }
+    updateBulkFireBar();
+}
+
+function clearBulkSelection() {
+    bulkSelection.forEach((id) => {
+        const btn = document.querySelector('.trigger-btn[data-webhook-id="' + CSS.escape(id) + '"]');
+        if (btn) btn.classList.remove('bulk-selected');
+    });
+    bulkSelection.clear();
+    updateBulkFireBar();
+}
+
+function updateBulkFireBar() {
+    const bar = document.getElementById('bulkFireBar');
+    const count = document.getElementById('bulkFireCount');
+    if (!bar) return;
+    if (bulkSelection.size === 0) {
+        bar.classList.remove('active');
+        bar.setAttribute('aria-hidden', 'true');
+    } else {
+        bar.classList.add('active');
+        bar.removeAttribute('aria-hidden');
+        if (count) count.textContent = String(bulkSelection.size);
+    }
+}
+
+function initBulkFire() {
+    const bar = document.getElementById('bulkFireBar');
+    const btnFire = document.getElementById('bulkFireBtn');
+    const btnClear = document.getElementById('bulkClearBtn');
+    if (!bar) return;
+
+    if (btnFire) btnFire.addEventListener('click', confirmBulkFire);
+    if (btnClear) btnClear.addEventListener('click', clearBulkSelection);
+
+    // Escape clears the selection (if nothing modal-ish is open above).
+    document.addEventListener('keydown', (e) => {
+        if (e.key !== 'Escape') return;
+        if (bulkSelection.size === 0) return;
+        const modalOpen = document.querySelector(
+            '.confirmation-modal.active, .settings-modal.active, .generic-modal.active'
+        );
+        if (modalOpen) return;
+        clearBulkSelection();
+    });
+}
+
+function confirmBulkFire() {
+    if (bulkSelection.size === 0) return;
+    const items = [];
+    bulkSelection.forEach((id) => {
+        const btn = document.querySelector('.trigger-btn[data-webhook-id="' + CSS.escape(id) + '"]');
+        if (btn) items.push({
+            btn: btn,
+            id: id,
+            name: btn.getAttribute('data-webhook-name') || id
+        });
+    });
+    if (items.length === 0) { clearBulkSelection(); return; }
+
+    const body = document.createElement('div');
+    const intro = document.createElement('p');
+    intro.textContent = 'Fire ' + items.length + ' webhook' + (items.length === 1 ? '' : 's')
+        + ' in sequence? Items currently on cooldown will be skipped.';
+    body.appendChild(intro);
+    const ul = document.createElement('ul');
+    ul.style.margin = '0';
+    ul.style.paddingLeft = '1.25em';
+    items.forEach((it) => {
+        const li = document.createElement('li');
+        li.textContent = it.name;
+        ul.appendChild(li);
+    });
+    body.appendChild(ul);
+
+    openModal({
+        title: 'Bulk fire (' + items.length + ')',
+        icon: 'bx-bolt',
+        bodyEl: body,
+        actions: [
+            { label: 'Cancel', variant: 'default', icon: 'bx-x' },
+            { label: 'FIRE ALL', variant: 'primary', icon: 'bxs-fire-alt',
+              onClick: () => executeBulkFire(items) }
+        ]
+    });
+}
+
+function executeBulkFire(items) {
+    clearBulkSelection();
+    let fired = 0, skipped = 0;
+    items.forEach((it) => {
+        if (isOnCooldown(it.id) || it.btn.classList.contains('loading')) {
+            skipped++;
+            return;
+        }
+        const urlProd = it.btn.getAttribute('data-webhook-url-prod');
+        const urlTest = it.btn.getAttribute('data-webhook-url-test');
+        const url = state.isTestMode ? urlTest : urlProd;
+        if (!url) { skipped++; return; }
+        // Bypass the single-item confirm modal (we already confirmed all
+        // of them above) and go straight to executeWebhook.
+        executeWebhook(it.btn, it.id, url, it.name);
+        fired++;
+    });
+    const type = fired > 0 ? 'success' : (skipped > 0 ? 'warning' : 'info');
+    showToast('Bulk fire: ' + fired + ' triggered' + (skipped ? ', ' + skipped + ' skipped' : ''), type);
 }
 
 // === Link Buttons ===

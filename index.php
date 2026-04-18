@@ -475,6 +475,24 @@ require __DIR__ . '/lib/render.php';
         </div>
     </div>
 
+    <!-- Bulk Fire Bar — fixed bottom-right when at least one webhook
+         button has been Shift-clicked. Escape clears the selection. -->
+    <div class="bulk-fire-bar" id="bulkFireBar" aria-hidden="true" role="region" aria-label="Bulk fire selection">
+        <span class="bulk-fire-label">
+            <i class='bx bx-checkbox-checked' aria-hidden="true"></i>
+            <strong id="bulkFireCount">0</strong>
+            <span>selected</span>
+        </span>
+        <button type="button" class="bulk-fire-clear" id="bulkClearBtn">
+            <i class='bx bx-x' aria-hidden="true"></i>
+            <span>Clear</span>
+        </button>
+        <button type="button" class="bulk-fire-go" id="bulkFireBtn">
+            <i class='bx bxs-fire-alt' aria-hidden="true"></i>
+            <span>Fire all</span>
+        </button>
+    </div>
+
     <!-- Scroll to Top Button -->
     <button class="scroll-to-top" id="scrollToTopBtn" aria-label="Scroll to top">
         <i class='bx bx-chevron-up'></i>

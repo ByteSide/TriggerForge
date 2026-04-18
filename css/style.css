@@ -2195,6 +2195,130 @@ body.test-mode .confirmation-modal {
     }
 }
 
+/* === Bulk Fire Bar (shown while shift-click multi-select is active) === */
+.bulk-fire-bar {
+    position: fixed;
+    left: 50%;
+    bottom: var(--space-4);
+    transform: translate(-50%, 200%);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--glass-bg-hover);
+    backdrop-filter: var(--glass-blur-strong);
+    -webkit-backdrop-filter: var(--glass-blur-strong);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-lg), var(--glow-primary-strong);
+    z-index: 950;
+    transition: transform var(--transition-base);
+    pointer-events: none;
+}
+
+.bulk-fire-bar.active {
+    transform: translate(-50%, 0);
+    pointer-events: all;
+}
+
+.bulk-fire-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.bulk-fire-label strong {
+    color: var(--color-primary);
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.bulk-fire-clear,
+.bulk-fire-go {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: var(--space-2) var(--space-3);
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: 1px solid;
+}
+
+.bulk-fire-clear {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+
+@media (hover: hover) {
+    .bulk-fire-clear:hover {
+        border-color: var(--text-secondary);
+        color: var(--text-primary);
+    }
+}
+
+.bulk-fire-go {
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    border-color: var(--color-primary);
+    color: #ffffff;
+}
+
+@media (hover: hover) {
+    .bulk-fire-go:hover {
+        filter: brightness(1.1);
+        box-shadow: var(--glow-primary-strong);
+    }
+}
+
+.bulk-fire-go:active,
+.bulk-fire-clear:active {
+    transform: scale(0.96);
+}
+
+/* Selected trigger buttons get a badge + ring so the selection state is
+   obvious at a glance. */
+.trigger-btn.bulk-selected {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    box-shadow: var(--glow-primary);
+}
+
+.trigger-btn.bulk-selected::after {
+    content: '✓';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+@media (max-width: 599px) {
+    .bulk-fire-bar {
+        left: var(--space-3);
+        right: var(--space-3);
+        transform: translate(0, 200%);
+        justify-content: center;
+    }
+    .bulk-fire-bar.active {
+        transform: translate(0, 0);
+    }
+}
+
 /* === Drag-and-drop visuals ===
    Native HTML5 drag on desktop. Cursor hint via `grab`, ghost-state on
    dragstart, and an orange border to mark the drop target. */
