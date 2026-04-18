@@ -465,6 +465,10 @@ require __DIR__ . '/lib/render.php';
                         <span class="settings-label">Haptic feedback on successful fire</span>
                         <input type="checkbox" class="settings-toggle" data-setting="haptic">
                     </label>
+                    <label class="settings-field settings-field-toggle">
+                        <span class="settings-label">Pull-to-refresh (mobile)</span>
+                        <input type="checkbox" class="settings-toggle" data-setting="enablePullToRefresh">
+                    </label>
                 </div>
 
                 <section class="settings-section" id="settingsAppSection" hidden>
@@ -499,6 +503,11 @@ require __DIR__ . '/lib/render.php';
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- Pull-to-refresh indicator — fixed top-center, visible during pull. -->
+    <div class="ptr-indicator" id="ptrIndicator" aria-hidden="true">
+        <i class='bx bx-refresh' aria-hidden="true"></i>
     </div>
 
     <!-- Bulk Fire Bar — fixed bottom-right when at least one webhook

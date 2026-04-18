@@ -44,15 +44,11 @@ const DEFAULT_SETTINGS = {
     showLastTriggered: true,
     haptic: true,
     favoritesCollapsed: false,
-    // Feature flags — each gates a feature that is opt-in because it
-    // asks for permissions or changes behaviour in a way not every user
-    // wants. Shipped/stable features (history, chains, bulk-fire, undo)
-    // are NOT flagged — they're always on and quietly useful.
-    features: {
-        pullToRefresh: false,
-        offlineQueue: false,
-        pushNotifications: false
-    }
+    // Opt-in experimental / permission-requiring toggles. Flat keys so
+    // the settings-modal checkbox wiring stays trivial.
+    enablePullToRefresh: false,
+    enableOfflineQueue: false,
+    enablePushNotifications: false
 };
 
 /**
@@ -94,6 +90,64 @@ function isSafeLinkUrl(url) {
     } catch (e) {
         return false;
     }
+}
+
+// === Pull-to-Refresh ===
+// Opt-in (Settings > Behavior). Active only on touch devices at
+// scrollY === 0. Drag past 80 px reloads the page. Visual indicator at
+// top-center fades in proportional to the pull depth and rotates on
+// travel — classic mobile convention.
+function initPullToRefresh() {
+    if (!state.settings.enablePullToRefresh) return;
+    if (!('ontouchstart' in window) && !navigator.maxTouchPoints) return;
+
+    const indicator = document.getElementById('ptrIndicator');
+    const threshold = 80;
+    let startY = 0;
+    let active = false;
+
+    document.addEventListener('touchstart', (e) => {
+        if (window.scrollY > 0) { active = false; return; }
+        if (!e.touches || e.touches.length !== 1) return;
+        startY = e.touches[0].clientY;
+        active = true;
+    }, { passive: true });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!active) return;
+        if (window.scrollY > 0) {
+            active = false;
+            if (indicator) { indicator.style.opacity = '0'; indicator.style.transform = ''; }
+            return;
+        }
+        const dy = e.touches[0].clientY - startY;
+        if (dy <= 0) return;
+        if (indicator) {
+            const progress = Math.min(dy / threshold, 1);
+            indicator.style.opacity = String(progress);
+            indicator.style.transform = 'translate(-50%, ' + Math.min(dy, threshold) + 'px) rotate(' + (progress * 360) + 'deg)';
+        }
+    }, { passive: true });
+
+    const end = (e) => {
+        if (!active) return;
+        active = false;
+        const endY = (e && e.changedTouches && e.changedTouches[0])
+            ? e.changedTouches[0].clientY
+            : startY;
+        const dy = endY - startY;
+        if (indicator) {
+            indicator.style.transition = 'opacity 200ms ease, transform 200ms ease';
+            indicator.style.opacity = '0';
+            indicator.style.transform = '';
+            setTimeout(() => { if (indicator) indicator.style.transition = ''; }, 220);
+        }
+        if (dy >= threshold && window.scrollY === 0) {
+            window.location.reload();
+        }
+    };
+    document.addEventListener('touchend', end, { passive: true });
+    document.addEventListener('touchcancel', end, { passive: true });
 }
 
 // === Service Worker registration ===
@@ -236,6 +290,7 @@ function initTriggerForge() {
     initBulkFire();
     initScrollToTop();
     initServiceWorker();
+    initPullToRefresh();
 
     // Restore cooldowns from previous session
     restoreCooldowns();

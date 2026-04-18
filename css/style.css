@@ -2293,6 +2293,31 @@ body.test-mode .confirmation-modal {
     cursor: not-allowed;
 }
 
+/* === Pull-to-Refresh Indicator === */
+.ptr-indicator {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translate(-50%, 0);
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--glass-bg-hover);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--color-primary);
+    border-radius: 50%;
+    color: var(--color-primary);
+    font-size: 1.25rem;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 9500;
+    box-shadow: var(--shadow-md);
+    will-change: transform, opacity;
+}
+
 /* === Bulk Fire Bar (shown while shift-click multi-select is active) === */
 .bulk-fire-bar {
     position: fixed;
