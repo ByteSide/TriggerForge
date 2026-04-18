@@ -190,7 +190,10 @@ curl_setopt_array($ch, $protocolOpts + [
         'User-Agent: TriggerForge/1.0'
     ],
     CURLOPT_POSTFIELDS => json_encode([
-        'triggered_at' => date('Y-m-d H:i:s'),
+        // ISO 8601 with timezone suffix so upstream parsers don't have to
+        // guess local vs. UTC. We default to UTC (top of file), so the
+        // result looks like "2024-01-15T10:30:00+00:00".
+        'triggered_at' => date('c'),
         'source' => 'TriggerForge'
     ]),
     CURLOPT_WRITEFUNCTION => function ($ch, $data) use (&$bytesReceived, $maxResponseBytes) {
