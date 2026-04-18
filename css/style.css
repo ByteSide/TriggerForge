@@ -136,6 +136,43 @@
     --glass-bg-hover: rgba(18, 47, 61, 0.8);
     --glass-blur: blur(10px);
     --glass-blur-strong: blur(20px);
+
+    /* Panel backgrounds (favorites bar, category sections, search bar, …).
+       Extracted so `[data-theme="light"]` can override them. */
+    --panel-bg: rgba(12, 35, 45, 0.1);
+    --panel-border: rgba(255, 255, 255, 0.05);
+    --divider: rgba(255, 255, 255, 0.1);
+    --code-bg: var(--bg-secondary);
+}
+
+/* === Light Theme ===
+   Opt-in via `html[data-theme="light"]`. Only overrides tokens — every
+   component sheet below reads from the tokens, so the cascade is enough
+   for a working (if not exhaustively tuned) light mode. */
+html[data-theme="light"] {
+    --bg-primary: #f5f7fa;
+    --bg-secondary: #ffffff;
+    --surface: #f1f3f5;
+    --surface-elevated: #e9ecef;
+
+    --text-primary: #1a1a1a;
+    --text-secondary: rgba(0, 0, 0, 0.72);
+    --text-muted: rgba(0, 0, 0, 0.55);
+
+    --border: rgba(253, 125, 0, 0.4);
+    --border-glass: rgba(0, 0, 0, 0.1);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+    --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.12);
+    --shadow-lg: 0 10px 24px rgba(0, 0, 0, 0.16);
+    --glow-primary: 0 0 15px rgba(253, 125, 0, 0.2);
+    --glow-primary-strong: 0 0 20px rgba(253, 125, 0, 0.3), 0 0 40px rgba(253, 125, 0, 0.15);
+
+    --glass-bg-hover: rgba(255, 255, 255, 0.7);
+
+    --panel-bg: rgba(255, 255, 255, 0.6);
+    --panel-border: rgba(0, 0, 0, 0.08);
+    --divider: rgba(0, 0, 0, 0.1);
 }
 
 /* === Reset & Base === */
@@ -297,11 +334,11 @@ body {
     z-index: 100;
     margin-bottom: var(--space-6);
     padding: var(--space-4);
-    background: rgba(12, 35, 45, 0.1);
+    background: var(--panel-bg);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     overflow: visible;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--panel-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
 }
@@ -368,10 +405,10 @@ body {
 
 /* === Category Section === */
 .category-section {
-    background: rgba(12, 35, 45, 0.1);
+    background: var(--panel-bg);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--panel-border);
     border-radius: var(--radius-lg);
     padding: var(--space-6);
     margin-bottom: var(--space-6);
@@ -2123,10 +2160,10 @@ body.test-mode .confirmation-modal {
 
 /* === Empty State (shown when config/config.php is missing or empty) === */
 .empty-state {
-    background: rgba(12, 35, 45, 0.1);
+    background: var(--panel-bg);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--panel-border);
     border-radius: var(--radius-lg);
     padding: var(--space-8) var(--space-6);
     margin-bottom: var(--space-6);
@@ -2297,10 +2334,10 @@ body.test-mode .confirmation-modal {
     gap: var(--space-3);
     margin-bottom: var(--space-4);
     padding: var(--space-3) var(--space-4);
-    background: rgba(12, 35, 45, 0.1);
+    background: var(--panel-bg);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--panel-border);
     border-radius: var(--radius-lg);
     transition: border-color var(--transition-fast);
 }
@@ -2848,6 +2885,83 @@ body.test-mode .confirmation-modal {
     border: 1px solid rgba(1, 83, 81, 0.2);
     border-radius: var(--radius-md);
     margin: 0;
+}
+
+.settings-field {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+}
+
+.settings-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.settings-segmented {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 2px;
+    background: var(--surface);
+    gap: 2px;
+}
+
+.settings-seg-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    background: transparent;
+    border: 0;
+    color: var(--text-secondary);
+    padding: var(--space-2) var(--space-3);
+    font-family: inherit;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: calc(var(--radius-md) - 2px);
+    transition: all var(--transition-fast);
+    touch-action: manipulation;
+}
+
+.settings-seg-btn i {
+    font-size: 1rem;
+}
+
+.settings-seg-btn.active {
+    background: var(--color-primary);
+    color: #ffffff;
+    box-shadow: var(--shadow-sm);
+}
+
+@media (hover: hover) {
+    .settings-seg-btn:not(.active):hover {
+        background: rgba(253, 125, 0, 0.1);
+        color: var(--text-primary);
+    }
+}
+
+.settings-seg-btn:active {
+    transform: scale(0.97);
+}
+
+/* Mobile: segmented controls wrap to their own row below the label. */
+@media (max-width: 599px) {
+    .settings-field {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .settings-segmented {
+        align-self: stretch;
+        width: 100%;
+    }
+    .settings-seg-btn {
+        flex: 1;
+        justify-content: center;
+    }
 }
 
 .settings-section {

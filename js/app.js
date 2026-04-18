@@ -1942,7 +1942,7 @@ function initSettings() {
         document.body.style.overflow = '';
     };
 
-    btnOpen.addEventListener('click', open);
+    btnOpen.addEventListener('click', () => { updateSettingsUI(); open(); });
     if (btnClose) btnClose.addEventListener('click', close);
     backdrop.addEventListener('click', close);
     document.addEventListener('keydown', (e) => {
@@ -1950,6 +1950,24 @@ function initSettings() {
             close();
         }
     });
+
+    // Wire up segmented radio-style controls. Each button carries
+    // data-setting (top-level key into state.settings) + data-value
+    // (the value that button represents). Clicking updates state,
+    // persists, re-applies (so the theme switch is instant), and
+    // refreshes the aria-checked + .active markers.
+    modal.querySelectorAll('.settings-seg-btn[data-setting][data-value]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const key = btn.dataset.setting;
+            const value = btn.dataset.value;
+            if (!(key in DEFAULT_SETTINGS)) return;
+            state.settings[key] = value;
+            saveState();
+            applySettings();
+            updateSettingsUI();
+        });
+    });
+    updateSettingsUI();
 
     // Reset-to-defaults button. Does NOT clear favorites/cooldowns/history
     // — only the look-and-feel / behaviour settings. Keeps the blast
@@ -1963,8 +1981,26 @@ function initSettings() {
             state.settings = mergeSettings({});
             saveState();
             applySettings();
+            updateSettingsUI();
             showToast('Settings reset to defaults', 'info');
         });
     }
+}
+
+/**
+ * Sync the Settings modal's UI controls with the current state.settings.
+ * Toggles .active + aria-checked on segmented radio buttons. Called on
+ * open, after any setting change, and after reset.
+ */
+function updateSettingsUI() {
+    const modal = document.getElementById('settingsModal');
+    if (!modal) return;
+    modal.querySelectorAll('.settings-seg-btn[data-setting][data-value]').forEach((btn) => {
+        const key = btn.dataset.setting;
+        const value = btn.dataset.value;
+        const active = state.settings[key] === value;
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-checked', active ? 'true' : 'false');
+    });
 }
 

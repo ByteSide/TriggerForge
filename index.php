@@ -28,8 +28,31 @@ require __DIR__ . '/lib/render.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <meta name="description" content="TriggerForge - Webhook Trigger Interface">
     <meta name="theme-color" content="#06171E">
-    <meta name="color-scheme" content="dark">
+    <meta name="color-scheme" content="dark light">
     <title>TriggerForge</title>
+    <script>
+    // Apply persisted theme BEFORE the CSS parses so a light-mode user
+    // doesn't see a dark-theme flash on every page load. Same logic as
+    // applySettings() but minimal and dependency-free.
+    (function () {
+        try {
+            var raw = localStorage.getItem('triggerforge_settings');
+            var theme = 'dark';
+            if (raw) {
+                var s = JSON.parse(raw);
+                if (s && typeof s.theme === 'string') theme = s.theme;
+            }
+            if (theme === 'auto') {
+                theme = (window.matchMedia &&
+                    window.matchMedia('(prefers-color-scheme: light)').matches)
+                    ? 'light' : 'dark';
+            }
+            if (theme === 'light' || theme === 'dark') {
+                document.documentElement.dataset.theme = theme;
+            }
+        } catch (e) { /* localStorage unavailable — stay with default dark */ }
+    })();
+    </script>
     
     <!-- CSS. filemtime() query strings force the browser to refetch on
          deploy — avoids the classic "hard-reload needed after update" trap. -->
@@ -341,9 +364,24 @@ require __DIR__ . '/lib/render.php';
                 </button>
             </div>
             <div class="settings-modal-body">
-                <p class="settings-placeholder">
-                    More settings land here as features mature. Sections for Appearance, Behavior and Data will fill up automatically as later phases ship — your preferences roll forward across updates.
-                </p>
+                <div class="settings-section">
+                    <h4 class="settings-section-title">Appearance</h4>
+                    <div class="settings-field">
+                        <span class="settings-label" id="themeLabel">Theme</span>
+                        <div class="settings-segmented" role="radiogroup" aria-labelledby="themeLabel">
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="theme" data-value="auto" aria-checked="false">
+                                <i class='bx bx-adjust' aria-hidden="true"></i> Auto
+                            </button>
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="theme" data-value="dark" aria-checked="false">
+                                <i class='bx bx-moon' aria-hidden="true"></i> Dark
+                            </button>
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="theme" data-value="light" aria-checked="false">
+                                <i class='bx bx-sun' aria-hidden="true"></i> Light
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="settings-section">
                     <h4 class="settings-section-title">Data</h4>
                     <button type="button" class="settings-action-btn" id="settingsResetBtn">

@@ -3,9 +3,9 @@
  * Canvas-based particle system with gradient background
  */
 
-/* Deep Space background with color accents */
+/* Deep Space background with color accents (dark theme, default). */
 html {
-    background: 
+    background:
         /* Orange glow at bottom */
         radial-gradient(ellipse 150% 50% at 50% 105%, rgba(253, 125, 0, 0.25) 0%, transparent 50%),
         /* Subtle teal accent top-right */
@@ -13,6 +13,14 @@ html {
         /* Deep Space base gradient */
         linear-gradient(to bottom, #020509 0%, #000203 100%);
     min-height: 100vh;
+}
+
+/* Light theme backdrop — same gradient topology, gentler contrast. */
+html[data-theme="light"] {
+    background:
+        radial-gradient(ellipse 150% 50% at 50% 105%, rgba(253, 125, 0, 0.18) 0%, transparent 55%),
+        radial-gradient(ellipse 180% 120% at 95% 0%, rgba(10, 186, 181, 0.15) 0%, transparent 55%),
+        linear-gradient(to bottom, #f5f7fa 0%, #eceff3 100%);
 }
 
 /* Particle Canvas - fullscreen behind content */
