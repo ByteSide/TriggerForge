@@ -25,7 +25,7 @@ if (!function_exists('tf_version')) {
         $v = str_replace(["\r", "\n"], '', $v);
         // Keep only the characters a real version string actually uses.
         $v = preg_replace('/[^A-Za-z0-9._+\-]/', '', $v);
-        if ($v === null || $v === '') return '1.0.0';
+        if ($v === null || $v === '') return '1.1.0';
         // Cap length so a runaway git describe can't produce a 10 KB header.
         return substr($v, 0, 64);
     }
@@ -74,6 +74,6 @@ if (!function_exists('tf_version')) {
 
         // 3. Hardcoded fallback so the UI / outbound User-Agent always has
         //    *something*.
-        return $cached = '1.0.0';
+        return $cached = '1.1.0';
     }
 }

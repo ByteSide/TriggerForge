@@ -2,7 +2,7 @@
 
 A self-hosted, offline-capable dashboard for firing webhooks with a single click.
 
-![Version](https://img.shields.io/badge/version-1.0.0-FD7D00)
+![Version](https://img.shields.io/badge/version-1.1.0-FD7D00)
 ![License](https://img.shields.io/badge/license-MIT-015351)
 ![PHP](https://img.shields.io/badge/PHP-7.4%2B-777BB4)
 ![Status](https://img.shields.io/badge/status-production-4ade80)

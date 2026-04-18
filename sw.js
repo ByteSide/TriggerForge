@@ -12,7 +12,7 @@
  * when the user clicks the "Reload" toast.
  */
 
-const CACHE_NAME = 'tf-v1';
+const CACHE_NAME = 'tf-v1.1.0';
 
 // Paths are relative so the SW works under a subdirectory deployment.
 const CORE_ASSETS = [
