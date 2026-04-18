@@ -392,6 +392,27 @@ require __DIR__ . '/lib/render.php';
                             <button type="button" role="radio" class="settings-swatch" data-setting="accent" data-value="pink"   style="--swatch: #EC4899" aria-checked="false" aria-label="Pink"></button>
                         </div>
                     </div>
+
+                    <div class="settings-field">
+                        <span class="settings-label" id="densityLabel">Density</span>
+                        <div class="settings-segmented" role="radiogroup" aria-labelledby="densityLabel">
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="density" data-value="compact" aria-checked="false">Compact</button>
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="density" data-value="comfortable" aria-checked="false">Comfortable</button>
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="density" data-value="spacious" aria-checked="false">Spacious</button>
+                        </div>
+                    </div>
+
+                    <div class="settings-field">
+                        <span class="settings-label" id="layoutLabel">Layout</span>
+                        <div class="settings-segmented" role="radiogroup" aria-labelledby="layoutLabel">
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="layout" data-value="grid" aria-checked="false">
+                                <i class='bx bx-grid-alt' aria-hidden="true"></i> Grid
+                            </button>
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="layout" data-value="list" aria-checked="false">
+                                <i class='bx bx-list-ul' aria-hidden="true"></i> List
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="settings-section">

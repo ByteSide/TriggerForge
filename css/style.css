@@ -2158,6 +2158,66 @@ body.test-mode .confirmation-modal {
     }
 }
 
+/* === Density & Layout overrides (driven by Settings > Appearance) === */
+body[data-density="compact"] .trigger-btn,
+body[data-density="compact"] .custom-link-btn {
+    min-height: 48px;
+    padding: var(--space-2) var(--space-4);
+    font-size: 0.875rem;
+}
+
+body[data-density="compact"] .trigger-btn-icon,
+body[data-density="compact"] .link-btn-icon-fallback {
+    font-size: 1.25rem;
+}
+
+body[data-density="compact"] .category-section {
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+body[data-density="compact"] .button-grid {
+    gap: var(--space-2);
+    padding: var(--space-2) 0;
+}
+
+body[data-density="compact"] .category-header {
+    padding: var(--space-3);
+    margin: calc(var(--space-4) * -1);
+    margin-bottom: var(--space-3);
+}
+
+body[data-density="spacious"] .trigger-btn,
+body[data-density="spacious"] .custom-link-btn {
+    min-height: 84px;
+    padding: var(--space-5) var(--space-6);
+    font-size: 1.0625rem;
+}
+
+body[data-density="spacious"] .category-section {
+    padding: var(--space-8);
+    margin-bottom: var(--space-8);
+}
+
+body[data-density="spacious"] .button-grid {
+    gap: var(--space-6);
+    padding: var(--space-6) 0;
+}
+
+/* List layout — stack buttons in a single column regardless of
+   breakpoint. Overrides the responsive grid templates below, hence the
+   !important (targeted, not ambient). */
+body[data-layout="list"] .button-grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--space-2);
+}
+
+body[data-layout="list"] .trigger-btn,
+body[data-layout="list"] .custom-link-btn {
+    min-height: 52px;
+    padding: var(--space-2) var(--space-4);
+}
+
 /* === Empty State (shown when config/config.php is missing or empty) === */
 .empty-state {
     background: var(--panel-bg);
