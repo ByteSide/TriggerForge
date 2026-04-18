@@ -116,6 +116,10 @@ if (!is_array($config)) {
 // would silently authorise a URL.
 $urlToItem = [];
 foreach ($config as $category => $webhooks) {
+    // Top-level '_app', '_meta' etc. are reserved metadata, not categories.
+    if (is_string($category) && strlen($category) > 0 && $category[0] === '_') {
+        continue;
+    }
     if (!is_array($webhooks)) {
         continue;
     }
