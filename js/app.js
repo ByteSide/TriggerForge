@@ -1647,11 +1647,15 @@ function handleSuccess(button, webhookName, payload, durationMs) {
     const undoUrl = button.getAttribute('data-undo-url') || '';
     let action = null;
     let toastDuration;
+    // Active-mode URL for the Copy-as-cURL helper in the response viewer.
+    const firedUrl = state.isTestMode
+        ? (button.getAttribute('data-webhook-url-test') || '')
+        : (button.getAttribute('data-webhook-url-prod') || '');
     if (undoUrl && /^https?:\/\//i.test(undoUrl)) {
         action = { label: 'Undo', onClick: () => fireUndo(undoUrl, webhookName) };
         toastDuration = 8000;
     } else if (_responseHasDetails(payload)) {
-        action = { label: 'Details', onClick: () => openResponseViewer(webhookName, payload, true) };
+        action = { label: 'Details', onClick: () => openResponseViewer(webhookName, payload, true, firedUrl) };
     }
     showToast(`✓ ${webhookName} triggered successfully!`, 'success', action, toastDuration);
 
@@ -1709,8 +1713,11 @@ function handleError(button, message, payload, durationMs) {
     // HTTP code — typically carries the real failure reason that the
     // top-line toast message can't fit.
     const webhookName = button.getAttribute('data-webhook-name') || 'Webhook';
+    const firedUrl = state.isTestMode
+        ? (button.getAttribute('data-webhook-url-test') || '')
+        : (button.getAttribute('data-webhook-url-prod') || '');
     const action = _responseHasDetails(payload)
-        ? { label: 'Details', onClick: () => openResponseViewer(webhookName, payload, false) }
+        ? { label: 'Details', onClick: () => openResponseViewer(webhookName, payload, false, firedUrl) }
         : null;
     showToast(`✗ Error: ${message}`, 'error', action);
 
@@ -2626,7 +2633,7 @@ function _responseHasDetails(payload) {
  * @param {object} payload     Server envelope from api/trigger.php.
  * @param {boolean} success    Whether this was a success path (picks icon).
  */
-function openResponseViewer(webhookName, payload, success) {
+function openResponseViewer(webhookName, payload, success, requestUrl) {
     const container = document.createElement('div');
 
     // Top meta row: HTTP code + content-type.
@@ -2691,12 +2698,64 @@ function openResponseViewer(webhookName, payload, success) {
     pre.textContent = body !== '' ? body : '(empty response body)';
     container.appendChild(pre);
 
+    const actions = [];
+    if (typeof requestUrl === 'string' && requestUrl !== '') {
+        actions.push({
+            label: 'Copy as cURL',
+            variant: 'default',
+            icon: 'bx-copy',
+            onClick: () => {
+                copyTriggerAsCurl(requestUrl);
+                return false; // keep the modal open after copying
+            }
+        });
+    }
+    actions.push({ label: 'Close', variant: 'default', icon: 'bx-x' });
+
     openModal({
         title: 'Response — ' + webhookName,
         icon: success ? 'bx-check-circle' : 'bx-error-circle',
         bodyEl: container,
-        actions: [{ label: 'Close', variant: 'default', icon: 'bx-x' }]
+        actions: actions
     });
+}
+
+/**
+ * Build a curl command that reproduces the CLIENT → trigger.php call
+ * (not the outbound fire — trigger.php itself keeps the upstream's
+ * auth headers and payload internal to the server).
+ */
+function copyTriggerAsCurl(webhookUrl) {
+    const trigger = new URL('api/trigger.php', window.location.href).href;
+    const body = { webhook_url: String(webhookUrl || '') };
+    const bodyJson = JSON.stringify(body);
+    // Escape single quotes for POSIX shell single-quoted strings.
+    const escSingle = (s) => String(s).replace(/'/g, "'\\''");
+    const cmd = "curl -X POST '" + escSingle(trigger) + "' \\\n"
+              + "  -u '<user>:<pass>' \\\n"
+              + "  -H 'Content-Type: application/json' \\\n"
+              + "  -d '" + escSingle(bodyJson) + "'";
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        navigator.clipboard.writeText(cmd)
+            .then(() => showToast('cURL command copied', 'success'))
+            .catch((err) => showToast('Copy failed: ' + err.message, 'error'));
+    } else {
+        // Fallback: select+copy via a throwaway textarea.
+        const ta = document.createElement('textarea');
+        ta.value = cmd;
+        ta.style.position = 'fixed';
+        ta.style.top = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+            document.execCommand('copy');
+            showToast('cURL command copied', 'success');
+        } catch (e) {
+            showToast('Clipboard unavailable — see console', 'warning');
+            console.log(cmd);
+        }
+        ta.remove();
+    }
 }
 
 // === Trigger History ===
@@ -2913,7 +2972,7 @@ function renderHistoryRow(entry, idx) {
                 response_headers: entry.responseHeaders,
                 response_content_type: entry.responseContentType,
                 success: entry.status === 'success'
-            }, entry.status === 'success');
+            }, entry.status === 'success', entry.url || '');
         });
         actions.appendChild(detailsBtn);
     }
