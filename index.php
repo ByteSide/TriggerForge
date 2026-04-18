@@ -129,13 +129,32 @@ require __DIR__ . '/lib/render.php';
             </div>
             
             <?php if (empty($config)): ?>
-                <div class="category-section">
-                    <div class="favorites-empty">
-                        <i class='bx bx-alert-circle'></i>
-                        <p>No webhooks configured.</p>
-                        <p style="margin-top: 8px;">Please edit <code>config/config.php</code></p>
-                    </div>
-                </div>
+                <section class="empty-state" aria-labelledby="emptyStateTitle">
+                    <i class='bx bxs-rocket empty-state-icon' aria-hidden="true"></i>
+                    <h2 class="empty-state-title" id="emptyStateTitle">Welcome to TriggerForge</h2>
+                    <p class="empty-state-text">
+                        No webhooks configured yet. Copy the example config, add your own URLs, and reload the page.
+                    </p>
+                    <ol class="empty-state-steps">
+                        <li>
+                            <span class="empty-state-step-num">1</span>
+                            <span>Create your config from the template:</span>
+                            <code class="empty-state-code">cp config/config.example.php config/config.php</code>
+                        </li>
+                        <li>
+                            <span class="empty-state-step-num">2</span>
+                            <span>Edit <code>config/config.php</code> and list your webhook URLs in <code>webhook_url_test</code> and <code>webhook_url_prod</code>.</span>
+                        </li>
+                        <li>
+                            <span class="empty-state-step-num">3</span>
+                            <span>Reload this page — your buttons will appear here.</span>
+                        </li>
+                    </ol>
+                    <p class="empty-state-hint">
+                        <i class='bx bx-info-circle' aria-hidden="true"></i>
+                        Full docs: see <code>README.md</code> and <code>SETUP_SECURITY.md</code> in the project root.
+                    </p>
+                </section>
             <?php else: ?>
                 <?php
                     $usedCategoryIds = [];
