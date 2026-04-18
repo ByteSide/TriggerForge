@@ -293,6 +293,7 @@ function initTriggerForge() {
     initServiceWorker();
     initPullToRefresh();
     initOfflineQueue();
+    initShareTarget();
 
     // Restore cooldowns from previous session
     restoreCooldowns();
@@ -1188,7 +1189,7 @@ function triggerWebhook(button) {
     });
 }
 
-function executeWebhook(button, webhookId, webhookUrl, webhookName) {
+function executeWebhook(button, webhookId, webhookUrl, webhookName, shared) {
     // Clear leftover state from a previous flow so the 1s revert gates in
     // handleSuccess/handleError can tell "still mine" from "already moved
     // on". Without this, a re-trigger within the 1s window would still see
@@ -1216,14 +1217,24 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
     const timeoutId = setTimeout(() => controller.abort(), 40000);
     const startedAt = Date.now();
 
+    const requestBody = { webhook_url: webhookUrl };
+    if (shared && typeof shared === 'object') {
+        // Only passes through the three known share-target fields; the
+        // server validates shape anyway, so sending extra keys is just
+        // wasted bytes.
+        const payload = {};
+        ['title', 'text', 'url'].forEach((k) => {
+            if (typeof shared[k] === 'string' && shared[k] !== '') payload[k] = shared[k];
+        });
+        if (Object.keys(payload).length > 0) requestBody.shared = payload;
+    }
+
     fetch('api/trigger.php', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-            webhook_url: webhookUrl
-        }),
+        body: JSON.stringify(requestBody),
         signal: controller.signal
     })
     .then(response => response.json().catch(() => ({
@@ -1277,6 +1288,103 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
         // one so the history row still records the attempt + duration.
         handleError(button, msg, { http_code: 0, response_body: '', response_headers: {} }, durationMs);
         button.disabled = false;
+    });
+}
+
+// === Share-Target (PWA) ===
+// site.webmanifest declares share_target, so the OS share sheet offers
+// TriggerForge as a destination. When picked, the OS opens index.php
+// with shared_{title,text,url} query params; we surface a picker modal
+// and forward the chosen webhook's fire with `shared: {...}` in the
+// POST body (trigger.php validates shape + caps each field at 2 KB).
+function initShareTarget() {
+    let params;
+    try { params = new URLSearchParams(window.location.search); }
+    catch (e) { return; }
+    const shared = {
+        title: params.get('shared_title') || '',
+        text: params.get('shared_text') || '',
+        url: params.get('shared_url') || ''
+    };
+    if (!shared.title && !shared.text && !shared.url) return;
+
+    // Scrub the query string so a reload doesn't re-open the picker.
+    if (history && typeof history.replaceState === 'function') {
+        try { history.replaceState({}, '', window.location.pathname); }
+        catch (e) { /* some browsers restrict after paint; ignore */ }
+    }
+    openSharePicker(shared);
+}
+
+function openSharePicker(shared) {
+    const body = document.createElement('div');
+    const intro = document.createElement('p');
+    intro.textContent = 'Pick a webhook to fire with this shared content:';
+    body.appendChild(intro);
+
+    const preview = document.createElement('dl');
+    if (shared.title) {
+        const dt = document.createElement('dt'); dt.textContent = 'Title';
+        const dd = document.createElement('dd'); dd.textContent = shared.title;
+        preview.appendChild(dt); preview.appendChild(dd);
+    }
+    if (shared.text) {
+        const dt = document.createElement('dt'); dt.textContent = 'Text';
+        const dd = document.createElement('dd'); dd.textContent = shared.text;
+        preview.appendChild(dt); preview.appendChild(dd);
+    }
+    if (shared.url) {
+        const dt = document.createElement('dt'); dt.textContent = 'URL';
+        const dd = document.createElement('dd'); dd.textContent = shared.url;
+        preview.appendChild(dt); preview.appendChild(dd);
+    }
+    body.appendChild(preview);
+
+    const list = document.createElement('div');
+    list.style.display = 'flex';
+    list.style.flexDirection = 'column';
+    list.style.gap = 'var(--space-2)';
+    list.style.marginTop = 'var(--space-3)';
+
+    const buttons = document.querySelectorAll('.trigger-btn');
+    if (buttons.length === 0) {
+        const empty = document.createElement('p');
+        empty.textContent = 'No webhooks configured.';
+        empty.style.color = 'var(--text-muted)';
+        list.appendChild(empty);
+    }
+    buttons.forEach((btn) => {
+        const pick = document.createElement('button');
+        pick.type = 'button';
+        pick.className = 'generic-modal-btn generic-modal-btn-default';
+        pick.style.justifyContent = 'flex-start';
+        pick.style.textAlign = 'left';
+        pick.style.width = '100%';
+        const label = document.createElement('span');
+        label.textContent = btn.getAttribute('data-webhook-name') || '(unnamed)';
+        pick.appendChild(label);
+        pick.addEventListener('click', () => {
+            const id = btn.getAttribute('data-webhook-id');
+            const url = state.isTestMode
+                ? btn.getAttribute('data-webhook-url-test')
+                : btn.getAttribute('data-webhook-url-prod');
+            const name = btn.getAttribute('data-webhook-name') || 'Webhook';
+            if (!url) {
+                showToast('No ' + (state.isTestMode ? 'TEST' : 'PROD') + ' URL for ' + name, 'warning');
+                return;
+            }
+            closeGenericModal();
+            executeWebhook(btn, id, url, name, shared);
+        });
+        list.appendChild(pick);
+    });
+    body.appendChild(list);
+
+    openModal({
+        title: 'Shared content',
+        icon: 'bx-share-alt',
+        bodyEl: body,
+        actions: [{ label: 'Cancel', variant: 'default', icon: 'bx-x' }]
     });
 }
 

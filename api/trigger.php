@@ -159,6 +159,24 @@ if (!array_key_exists($webhookUrl, $urlToItem)) {
 }
 $matchedItem = $urlToItem[$webhookUrl];
 
+// Optional share-target pass-through: the PWA flow lands on index.php
+// with shared_{title,text,url} query params, and the picker sends them
+// via this field. Everything else in $input is ignored.
+$shared = null;
+if (isset($input['shared']) && is_array($input['shared'])) {
+    $shared = [];
+    foreach (['title', 'text', 'url'] as $sk) {
+        if (isset($input['shared'][$sk]) && is_string($input['shared'][$sk])) {
+            // Hard-cap at 2 KB per field so a huge paste can't balloon
+            // the outbound body past what the upstream is willing to
+            // accept.
+            $v = substr($input['shared'][$sk], 0, 2048);
+            if ($v !== '') $shared[$sk] = $v;
+        }
+    }
+    if (empty($shared)) $shared = null;
+}
+
 /**
  * Build the outbound JSON body for a matched config item. Default keys
  * (triggered_at, source, triggered_by) are always present; a per-item
@@ -166,13 +184,22 @@ $matchedItem = $urlToItem[$webhookUrl];
  *
  * Payload lives in config — never in the client request — so a rogue
  * client can't smuggle their own body to a whitelisted URL.
+ *
+ * EXCEPTION: $shared is the narrow pass-through used by the PWA
+ * share-target flow. Its shape is strictly validated upstream (only
+ * string fields: title/text/url, each capped). It's added under a
+ * single 'shared' namespace so upstream workflows can opt in without
+ * colliding with regular payload keys.
  */
-function tf_build_payload(array $item) {
+function tf_build_payload(array $item, $shared = null) {
     $base = [
         'triggered_at' => date('c'),
         'source'       => 'TriggerForge',
         'triggered_by' => isset($_SERVER['PHP_AUTH_USER']) ? $_SERVER['PHP_AUTH_USER'] : 'anonymous',
     ];
+    if (is_array($shared) && !empty($shared)) {
+        $base['shared'] = $shared;
+    }
     if (isset($item['payload']) && is_array($item['payload'])) {
         return array_merge($base, $item['payload']);
     }
@@ -262,7 +289,7 @@ $responseHeaders = [];
 // an upstream likely doesn't parse.
 $method = tf_resolve_method($matchedItem);
 $httpHeaders = tf_build_headers($matchedItem, $method);
-$postBody = $method === 'GET' ? null : json_encode(tf_build_payload($matchedItem));
+$postBody = $method === 'GET' ? null : json_encode(tf_build_payload($matchedItem, $shared));
 
 $methodOpts = [];
 if ($method === 'POST') {
