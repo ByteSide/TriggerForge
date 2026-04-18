@@ -380,6 +380,18 @@ require __DIR__ . '/lib/render.php';
                             </button>
                         </div>
                     </div>
+
+                    <div class="settings-field">
+                        <span class="settings-label" id="accentLabel">Accent</span>
+                        <div class="settings-swatches" role="radiogroup" aria-labelledby="accentLabel">
+                            <button type="button" role="radio" class="settings-swatch" data-setting="accent" data-value="orange" style="--swatch: #FD7D00" aria-checked="false" aria-label="Orange"></button>
+                            <button type="button" role="radio" class="settings-swatch" data-setting="accent" data-value="blue"   style="--swatch: #3B82F6" aria-checked="false" aria-label="Blue"></button>
+                            <button type="button" role="radio" class="settings-swatch" data-setting="accent" data-value="green"  style="--swatch: #10B981" aria-checked="false" aria-label="Green"></button>
+                            <button type="button" role="radio" class="settings-swatch" data-setting="accent" data-value="red"    style="--swatch: #EF4444" aria-checked="false" aria-label="Red"></button>
+                            <button type="button" role="radio" class="settings-swatch" data-setting="accent" data-value="violet" style="--swatch: #8B5CF6" aria-checked="false" aria-label="Violet"></button>
+                            <button type="button" role="radio" class="settings-swatch" data-setting="accent" data-value="pink"   style="--swatch: #EC4899" aria-checked="false" aria-label="Pink"></button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="settings-section">

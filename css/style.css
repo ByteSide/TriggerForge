@@ -2948,6 +2948,56 @@ body.test-mode .confirmation-modal {
     transform: scale(0.97);
 }
 
+/* Colour swatches (accent picker). Same data-setting / data-value wiring
+   as the segmented-control above — just a different visual. */
+.settings-swatches {
+    display: inline-flex;
+    gap: var(--space-2);
+}
+
+.settings-swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    background: var(--swatch, var(--color-primary));
+    cursor: pointer;
+    padding: 0;
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-fast);
+    touch-action: manipulation;
+    position: relative;
+}
+
+.settings-swatch::after {
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-primary);
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.settings-swatch.active {
+    border-color: var(--text-primary);
+    transform: scale(1.1);
+}
+
+.settings-swatch.active::after {
+    opacity: 1;
+}
+
+@media (hover: hover) {
+    .settings-swatch:not(.active):hover {
+        transform: scale(1.08);
+    }
+}
+
+.settings-swatch:active {
+    transform: scale(0.95);
+}
+
 /* Mobile: segmented controls wrap to their own row below the label. */
 @media (max-width: 599px) {
     .settings-field {

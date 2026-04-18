@@ -1850,6 +1850,18 @@ function initKeyboardShortcuts() {
 }
 
 // === Settings ===
+// Accent color palette. Each entry maps the Settings swatch to the three
+// --color-primary* custom properties. Keeps the default orange as the
+// first entry so older configs and new users land on the ByteSide brand.
+const ACCENT_COLORS = {
+    orange: { primary: '#FD7D00', hover: '#FFA500', dark: '#d66a00' },
+    blue:   { primary: '#3B82F6', hover: '#60A5FA', dark: '#1D4ED8' },
+    green:  { primary: '#10B981', hover: '#34D399', dark: '#047857' },
+    red:    { primary: '#EF4444', hover: '#F87171', dark: '#B91C1C' },
+    violet: { primary: '#8B5CF6', hover: '#A78BFA', dark: '#6D28D9' },
+    pink:   { primary: '#EC4899', hover: '#F472B6', dark: '#BE185D' }
+};
+
 // applySettings projects state.settings onto the DOM. It's the single source
 // of truth for visual preferences: later feature modules (theme switch,
 // density, etc.) just read state.settings and call applySettings() again.
@@ -1871,10 +1883,18 @@ function applySettings() {
     }
     html.dataset.theme = effectiveTheme;
 
-    // Accent / density / layout / font-scale are data attributes so CSS
-    // can target them with [data-accent="blue"] selectors once the theme
-    // sheet adds those rules in later phases.
+    // Accent — project onto the --color-primary* trio so the whole
+    // design system (buttons, focus rings, glows) retints live without
+    // touching component CSS. Unknown values fall back to orange.
+    const accent = ACCENT_COLORS[s.accent] || ACCENT_COLORS.orange;
+    html.style.setProperty('--color-primary', accent.primary);
+    html.style.setProperty('--color-primary-hover', accent.hover);
+    html.style.setProperty('--color-primary-dark', accent.dark);
     body.dataset.accent = s.accent;
+
+    // Density / layout / font-scale are data attributes so CSS can
+    // target them with [data-density="compact"] etc. once the theme
+    // sheet adds those rules in later phases.
     body.dataset.density = s.density;
     body.dataset.layout = s.layout;
     body.dataset.particles = s.particles;
@@ -1956,7 +1976,7 @@ function initSettings() {
     // (the value that button represents). Clicking updates state,
     // persists, re-applies (so the theme switch is instant), and
     // refreshes the aria-checked + .active markers.
-    modal.querySelectorAll('.settings-seg-btn[data-setting][data-value]').forEach((btn) => {
+    modal.querySelectorAll('[data-setting][data-value]').forEach((btn) => {
         btn.addEventListener('click', () => {
             const key = btn.dataset.setting;
             const value = btn.dataset.value;
@@ -1995,7 +2015,7 @@ function initSettings() {
 function updateSettingsUI() {
     const modal = document.getElementById('settingsModal');
     if (!modal) return;
-    modal.querySelectorAll('.settings-seg-btn[data-setting][data-value]').forEach((btn) => {
+    modal.querySelectorAll('[data-setting][data-value]').forEach((btn) => {
         const key = btn.dataset.setting;
         const value = btn.dataset.value;
         const active = state.settings[key] === value;
