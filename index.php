@@ -373,6 +373,10 @@ $appBgImage = (isset($appMeta['background_image']) && is_string($appMeta['backgr
         <header class="history-drawer-header">
             <i class='bx bx-history history-drawer-icon' aria-hidden="true"></i>
             <h3 class="history-drawer-title" id="historyDrawerTitle">Trigger history</h3>
+            <button type="button" class="history-drawer-action" id="historyStatsBtn" title="Show stats">
+                <i class='bx bx-bar-chart-alt-2' aria-hidden="true"></i>
+                <span>Stats</span>
+            </button>
             <button type="button" class="history-drawer-action" id="historyClearBtn" title="Clear history">
                 <i class='bx bx-trash' aria-hidden="true"></i>
                 <span>Clear</span>

@@ -2804,6 +2804,8 @@ function initHistory() {
 
     btn.addEventListener('click', toggleHistoryDrawer);
     if (btnClose) btnClose.addEventListener('click', closeHistoryDrawer);
+    const btnStats = document.getElementById('historyStatsBtn');
+    if (btnStats) btnStats.addEventListener('click', openStatsModal);
     if (btnClear) {
         btnClear.addEventListener('click', () => {
             if (state.history.length === 0) return;
@@ -2978,6 +2980,128 @@ function renderHistoryRow(entry, idx) {
     }
     row.appendChild(actions);
     return row;
+}
+
+// === Stats ===
+// Aggregates over state.history + state.triggerCounts, rendered via
+// the generic modal. No chart library — plain SVG-free div bars.
+function openStatsModal() {
+    const history = Array.isArray(state.history) ? state.history : [];
+    const counts  = state.triggerCounts || {};
+
+    const total = history.length;
+    const ok    = history.filter((e) => e && e.status === 'success').length;
+    const rate  = total > 0 ? Math.round((ok / total) * 1000) / 10 : null;
+    const durs  = history
+        .map((e) => (e && typeof e.durationMs === 'number') ? e.durationMs : null)
+        .filter((d) => d !== null && d > 0);
+    const avg = durs.length > 0 ? Math.round(durs.reduce((a, b) => a + b, 0) / durs.length) : null;
+
+    const top = Object.keys(counts)
+        .map((id) => ({ id: id, count: counts[id] }))
+        .filter((e) => typeof e.count === 'number' && e.count > 0)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+    const maxCount = top.length > 0 ? top[0].count : 1;
+
+    const body = document.createElement('div');
+    body.className = 'stats-body';
+
+    // KPIs
+    const kpis = document.createElement('div');
+    kpis.className = 'stats-kpis';
+    const addKpi = (label, value) => {
+        const k = document.createElement('div');
+        k.className = 'stats-kpi';
+        const v = document.createElement('div');
+        v.className = 'stats-kpi-value';
+        v.textContent = value == null ? '—' : String(value);
+        const l = document.createElement('div');
+        l.className = 'stats-kpi-label';
+        l.textContent = label;
+        k.appendChild(v); k.appendChild(l);
+        kpis.appendChild(k);
+    };
+    addKpi('Logged', total);
+    addKpi('Success rate', rate == null ? null : rate + '%');
+    addKpi('Avg duration', avg == null ? null : avg + ' ms');
+    body.appendChild(kpis);
+
+    // Top 10 most fired
+    const title = document.createElement('h4');
+    title.className = 'stats-section-title';
+    title.textContent = 'Most fired';
+    body.appendChild(title);
+    if (top.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'stats-empty';
+        empty.textContent = 'No fires counted yet. Fire a webhook and come back.';
+        body.appendChild(empty);
+    } else {
+        const ul = document.createElement('ul');
+        ul.className = 'stats-top-list';
+        top.forEach(({ id, count }) => {
+            const li = document.createElement('li');
+            li.className = 'stats-top-row';
+
+            const btn = document.querySelector('.trigger-btn[data-webhook-id="' + CSS.escape(id) + '"]');
+            const name = document.createElement('span');
+            name.className = 'stats-top-name';
+            if (btn) {
+                name.textContent = btn.getAttribute('data-webhook-name') || id;
+            } else {
+                name.textContent = id + ' (removed)';
+                name.style.color = 'var(--text-muted)';
+            }
+            li.appendChild(name);
+
+            const barWrap = document.createElement('div');
+            barWrap.className = 'stats-top-bar';
+            const fill = document.createElement('div');
+            fill.className = 'stats-top-fill';
+            fill.style.width = Math.max(4, (count / maxCount) * 100) + '%';
+            barWrap.appendChild(fill);
+            li.appendChild(barWrap);
+
+            const n = document.createElement('span');
+            n.className = 'stats-top-count';
+            n.textContent = String(count);
+            li.appendChild(n);
+
+            ul.appendChild(li);
+        });
+        body.appendChild(ul);
+    }
+
+    // Recent errors — quick scan for what's failing.
+    const recentErrors = history.filter((e) => e && e.status === 'error').slice(0, 5);
+    if (recentErrors.length > 0) {
+        const etitle = document.createElement('h4');
+        etitle.className = 'stats-section-title';
+        etitle.textContent = 'Recent errors';
+        body.appendChild(etitle);
+        const eul = document.createElement('ul');
+        eul.className = 'stats-err-list';
+        recentErrors.forEach((e) => {
+            const li = document.createElement('li');
+            const when = document.createElement('span');
+            when.textContent = formatRelativeTime(e.ts) + ' · ' + e.name;
+            const msg = document.createElement('span');
+            msg.className = 'stats-err-msg';
+            msg.textContent = e.errorMessage || ('HTTP ' + (e.httpCode || '?'));
+            li.appendChild(when);
+            li.appendChild(msg);
+            eul.appendChild(li);
+        });
+        body.appendChild(eul);
+    }
+
+    openModal({
+        title: 'Stats',
+        icon: 'bx-bar-chart-alt-2',
+        bodyEl: body,
+        actions: [{ label: 'Close', variant: 'default', icon: 'bx-x' }]
+    });
 }
 
 // === Trigger Widgets (Last-Triggered + Counter) ===
