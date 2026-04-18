@@ -90,8 +90,8 @@
     
     /* Text Colors */
     --text-primary: #ffffff;
-    --text-secondary: rgba(255, 255, 255, 0.7);
-    --text-muted: rgba(255, 255, 255, 0.5);
+    --text-secondary: rgba(255, 255, 255, 0.72);
+    --text-muted: rgba(255, 255, 255, 0.6);
     
     /* Borders */
     --border: rgba(253, 125, 0, 0.3);
@@ -184,6 +184,10 @@ html[data-theme="light"] {
 
 html {
     scroll-behavior: smooth;
+    /* User-controlled text scale from Settings > Appearance > Text size.
+       rem-based sizes cascade from this root value, so the whole
+       typography scales together. */
+    font-size: calc(16px * var(--font-scale, 1));
 }
 
 body {
@@ -1199,8 +1203,27 @@ body.test-mode * {
 
 /* === Accessibility === */
 *:focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 3px solid var(--color-primary);
     outline-offset: 2px;
+    /* Extra ring so the outline stays visible against glass panels that
+       share the accent colour (buttons on hover, etc). */
+    box-shadow: 0 0 0 5px rgba(253, 125, 0, 0.25);
+}
+
+html[data-theme="light"] *:focus-visible {
+    box-shadow: 0 0 0 5px rgba(253, 125, 0, 0.2);
+}
+
+/* Honour prefers-reduced-data: skip Google-favicon fetches for link
+   buttons, show the Boxicon fallback directly. Users who opt out of
+   heavy assets also get privacy from the 3rd-party pingback. */
+@media (prefers-reduced-data: reduce) {
+    .link-btn-favicon {
+        display: none !important;
+    }
+    .link-btn-icon-fallback {
+        display: inline-block !important;
+    }
 }
 
 /* Visually hidden but exposed to assistive tech. Used for aria-live

@@ -74,6 +74,7 @@ require __DIR__ . '/lib/render.php';
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <noscript>
         <div style="position:fixed;top:0;left:0;right:0;padding:16px;background:#ef4444;color:#fff;font-family:monospace;text-align:center;z-index:99999;">
             TriggerForge requires JavaScript. Please enable it to fire webhooks.
@@ -411,6 +412,16 @@ require __DIR__ . '/lib/render.php';
                             <button type="button" role="radio" class="settings-seg-btn" data-setting="layout" data-value="list" aria-checked="false">
                                 <i class='bx bx-list-ul' aria-hidden="true"></i> List
                             </button>
+                        </div>
+                    </div>
+
+                    <div class="settings-field">
+                        <span class="settings-label" id="fontScaleLabel">Text size</span>
+                        <div class="settings-segmented" role="radiogroup" aria-labelledby="fontScaleLabel">
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="fontScale" data-value="0.875" aria-checked="false">Small</button>
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="fontScale" data-value="1" aria-checked="false">Default</button>
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="fontScale" data-value="1.125" aria-checked="false">Large</button>
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="fontScale" data-value="1.25" aria-checked="false">XL</button>
                         </div>
                     </div>
                 </div>

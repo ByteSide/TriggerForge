@@ -2007,8 +2007,9 @@ function initSettings() {
     modal.querySelectorAll('[data-setting][data-value]').forEach((btn) => {
         btn.addEventListener('click', () => {
             const key = btn.dataset.setting;
-            const value = btn.dataset.value;
             if (!(key in DEFAULT_SETTINGS)) return;
+            const value = _coerceSettingValue(key, btn.dataset.value);
+            if (value === null) return;
             state.settings[key] = value;
             saveState();
             applySettings();
@@ -2045,10 +2046,29 @@ function updateSettingsUI() {
     if (!modal) return;
     modal.querySelectorAll('[data-setting][data-value]').forEach((btn) => {
         const key = btn.dataset.setting;
-        const value = btn.dataset.value;
+        if (!(key in DEFAULT_SETTINGS)) return;
+        const value = _coerceSettingValue(key, btn.dataset.value);
         const active = state.settings[key] === value;
         btn.classList.toggle('active', active);
         btn.setAttribute('aria-checked', active ? 'true' : 'false');
     });
+}
+
+/**
+ * HTML data-* attributes are always strings; coerce a string back to
+ * the type the DEFAULT_SETTINGS entry uses so saved values stay the
+ * right type (numbers stay numbers, booleans stay booleans). Returns
+ * null for invalid coercions so callers can bail early.
+ */
+function _coerceSettingValue(key, raw) {
+    const def = DEFAULT_SETTINGS[key];
+    if (typeof def === 'number') {
+        const n = parseFloat(raw);
+        return isNaN(n) ? null : n;
+    }
+    if (typeof def === 'boolean') {
+        return raw === 'true' || raw === '1';
+    }
+    return String(raw);
 }
 
