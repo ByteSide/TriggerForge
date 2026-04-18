@@ -11,7 +11,8 @@ const state = {
     isTestMode: false,
     settings: {},
     lastTriggered: {},
-    triggerCounts: {}
+    triggerCounts: {},
+    itemOrder: {}  // per-category arrays of item ids, produced by drag-sort
 };
 
 // === Constants ===
@@ -158,6 +159,8 @@ function initTriggerForge() {
     initSearch();
     initKeyboardShortcuts();
     initTriggerWidgets();
+    initDragSort();
+    applyItemOrder();
     initScrollToTop();
 
     // Restore cooldowns from previous session
@@ -222,6 +225,11 @@ function loadState() {
         {},
         v => v !== null && typeof v === 'object' && !Array.isArray(v)
     );
+    state.itemOrder = loadStateKey(
+        'triggerforge_item_order',
+        {},
+        v => v !== null && typeof v === 'object' && !Array.isArray(v)
+    );
 }
 
 function saveState() {
@@ -234,7 +242,8 @@ function saveState() {
         ['triggerforge_test_mode', state.isTestMode],
         ['triggerforge_settings', state.settings],
         ['triggerforge_last_triggered', state.lastTriggered],
-        ['triggerforge_trigger_counts', state.triggerCounts]
+        ['triggerforge_trigger_counts', state.triggerCounts],
+        ['triggerforge_item_order', state.itemOrder]
     ];
     writes.forEach(([key, value]) => {
         try {
@@ -1423,6 +1432,118 @@ function initSearch() {
             input.focus();
             input.select();
         }
+    });
+}
+
+// === Drag-and-Drop Item Sorting ===
+// HTML5 native drag-and-drop. Works on desktop; touch devices don't
+// dispatch drag events from native drag, so reorder is currently a
+// pointer-only feature. Per-user order is stored in state.itemOrder
+// (localStorage) — the config.php itself isn't modified, so shared
+// config stays the operator's source of truth.
+//
+// Visual reorder is done via CSS `order`, not DOM moves. That way the
+// PHP-rendered HTML stays authoritative for IDs / attributes and we
+// only paint on top of it.
+function initDragSort() {
+    let dragged = null;
+    let dragCategory = null;
+
+    document.querySelectorAll('.trigger-btn, .custom-link-btn').forEach((btn) => {
+        btn.addEventListener('dragstart', (e) => {
+            dragged = btn;
+            const section = btn.closest('.category-section');
+            const header = section ? section.querySelector('.category-header') : null;
+            dragCategory = header ? header.getAttribute('data-category-id') : null;
+            btn.classList.add('dragging');
+            try {
+                e.dataTransfer.effectAllowed = 'move';
+                // Firefox requires some dataTransfer payload to enable drag.
+                e.dataTransfer.setData('text/plain', 'tf-reorder');
+            } catch (err) { /* some browsers restrict drag metadata on cross-origin */ }
+        });
+
+        btn.addEventListener('dragend', () => {
+            if (dragged) dragged.classList.remove('dragging');
+            document.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over'));
+            dragged = null;
+            dragCategory = null;
+        });
+
+        btn.addEventListener('dragover', (e) => {
+            if (!dragged || dragged === btn) return;
+            const section = btn.closest('.category-section');
+            const header = section ? section.querySelector('.category-header') : null;
+            const targetCat = header ? header.getAttribute('data-category-id') : null;
+            if (targetCat !== dragCategory) return; // only within the same category
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            btn.classList.add('drag-over');
+        });
+
+        btn.addEventListener('dragleave', () => {
+            btn.classList.remove('drag-over');
+        });
+
+        btn.addEventListener('drop', (e) => {
+            e.preventDefault();
+            btn.classList.remove('drag-over');
+            if (!dragged || dragged === btn) return;
+            const section = btn.closest('.category-section');
+            const header = section ? section.querySelector('.category-header') : null;
+            const targetCat = header ? header.getAttribute('data-category-id') : null;
+            if (targetCat !== dragCategory) return;
+
+            // Build the current visual order (respects any prior itemOrder).
+            const items = Array.from(section.querySelectorAll('.trigger-btn, .custom-link-btn'));
+            items.sort((a, b) => {
+                const oa = parseFloat(a.style.order || '9999');
+                const ob = parseFloat(b.style.order || '9999');
+                if (oa !== ob) return oa - ob;
+                return Array.prototype.indexOf.call(a.parentNode.children, a) -
+                       Array.prototype.indexOf.call(b.parentNode.children, b);
+            });
+
+            const fromIdx = items.indexOf(dragged);
+            const toIdx = items.indexOf(btn);
+            if (fromIdx < 0 || toIdx < 0) return;
+            items.splice(fromIdx, 1);
+            // If we were before the target, removing us shifts the target
+            // left by one; otherwise insert at target's current index.
+            items.splice(fromIdx < toIdx ? toIdx - 1 : toIdx, 0, dragged);
+
+            const newOrder = items.map((b2) =>
+                b2.getAttribute('data-webhook-id') || b2.getAttribute('data-link-id')
+            ).filter(Boolean);
+            state.itemOrder[targetCat] = newOrder;
+            saveState();
+            applyItemOrder();
+        });
+    });
+}
+
+/**
+ * Project state.itemOrder onto the DOM via CSS `order`. Unknown items
+ * (not in the saved order) are appended after all known ones so new
+ * config entries always show up at the end instead of silently hiding.
+ */
+function applyItemOrder() {
+    const store = state.itemOrder || {};
+    document.querySelectorAll('.category-section').forEach((section) => {
+        const header = section.querySelector('.category-header');
+        if (!header) return;
+        const categoryId = header.getAttribute('data-category-id');
+        const desired = store[categoryId];
+        if (!Array.isArray(desired) || desired.length === 0) return;
+
+        const indexMap = {};
+        desired.forEach((id, i) => { indexMap[id] = i; });
+        let fallback = desired.length;
+        section.querySelectorAll('.trigger-btn, .custom-link-btn').forEach((btn) => {
+            const id = btn.getAttribute('data-webhook-id') || btn.getAttribute('data-link-id');
+            if (!id) return;
+            btn.style.order = id in indexMap ? String(indexMap[id]) : String(fallback++);
+        });
     });
 }
 

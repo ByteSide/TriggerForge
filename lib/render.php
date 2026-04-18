@@ -86,6 +86,7 @@ function tf_render_webhook_button(array $item, $itemId, $categoryName) {
                                     <button
                                         type="button"
                                         class="trigger-btn"
+                                        draggable="true"
                                         data-type="webhook"
                                         data-webhook-id="<?php echo tf_e($itemId); ?>"
                                         data-webhook-url-prod="<?php echo tf_e((string)($item['webhook_url_prod'] ?? '')); ?>"
@@ -126,6 +127,7 @@ function tf_render_link_button(array $item, $itemId, $categoryName) {
                                     <button
                                         type="button"
                                         class="custom-link-btn"
+                                        draggable="true"
                                         data-type="link"
                                         data-link-id="<?php echo tf_e($itemId); ?>"
                                         data-link-url="<?php echo tf_e($itemUrl); ?>"

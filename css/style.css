@@ -2195,6 +2195,26 @@ body.test-mode .confirmation-modal {
     }
 }
 
+/* === Drag-and-drop visuals ===
+   Native HTML5 drag on desktop. Cursor hint via `grab`, ghost-state on
+   dragstart, and an orange border to mark the drop target. */
+.trigger-btn[draggable="true"],
+.custom-link-btn[draggable="true"] {
+    cursor: grab;
+}
+
+.trigger-btn.dragging,
+.custom-link-btn.dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+}
+
+.trigger-btn.drag-over,
+.custom-link-btn.drag-over {
+    outline: 2px dashed var(--color-primary);
+    outline-offset: -4px;
+}
+
 /* === Density & Layout overrides (driven by Settings > Appearance) === */
 body[data-density="compact"] .trigger-btn,
 body[data-density="compact"] .custom-link-btn {
