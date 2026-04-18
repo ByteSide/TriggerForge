@@ -3212,6 +3212,69 @@ function applySettings() {
     // pre-DOM — the inner querySelectorAll just returns an empty NodeList.
     if (typeof renderAllLastTriggered === 'function') renderAllLastTriggered();
     if (typeof renderAllTriggerCounts === 'function') renderAllTriggerCounts();
+
+    // Sort-order (config / alphabet / last used / most used) — projects
+    // onto CSS `order`. Safe pre-DOM (no-op if no buttons yet).
+    if (typeof applySortOrder === 'function') applySortOrder();
+}
+
+/**
+ * Project state.settings.sortOrder onto visible button order via CSS
+ * `order`. 'config' hands back to applyItemOrder (3.3 drag-sort), so
+ * per-user drag arrangements stay the source of truth when the user
+ * hasn't picked an explicit sort.
+ */
+function applySortOrder() {
+    const mode = state.settings && state.settings.sortOrder ? state.settings.sortOrder : 'config';
+    const allBtns = document.querySelectorAll('.trigger-btn, .custom-link-btn, .chain-btn');
+    if (allBtns.length === 0) return;
+
+    if (mode === 'config') {
+        allBtns.forEach((btn) => {
+            if (btn.hasAttribute('data-sort-applied')) {
+                btn.style.order = '';
+                btn.removeAttribute('data-sort-applied');
+            }
+        });
+        // Re-apply the drag-sort (3.3) layer — it's the user's manual
+        // arrangement on top of the config order.
+        applyItemOrder();
+        return;
+    }
+
+    const idOf = (b) => b.getAttribute('data-webhook-id')
+        || b.getAttribute('data-link-id')
+        || b.getAttribute('data-chain-id')
+        || '';
+    const nameOf = (b) => (b.getAttribute('data-webhook-name')
+        || b.getAttribute('data-link-name')
+        || b.getAttribute('data-chain-name')
+        || '').toLowerCase();
+
+    document.querySelectorAll('.category-section').forEach((section) => {
+        const btns = Array.from(section.querySelectorAll('.trigger-btn, .custom-link-btn, .chain-btn'));
+        if (btns.length === 0) return;
+        btns.sort((a, b) => {
+            if (mode === 'alphabet') {
+                return nameOf(a).localeCompare(nameOf(b));
+            }
+            if (mode === 'lastUsed') {
+                const ta = (state.lastTriggered || {})[idOf(a)] || 0;
+                const tb = (state.lastTriggered || {})[idOf(b)] || 0;
+                return tb - ta;
+            }
+            if (mode === 'mostUsed') {
+                const ca = (state.triggerCounts || {})[idOf(a)] || 0;
+                const cb = (state.triggerCounts || {})[idOf(b)] || 0;
+                return cb - ca;
+            }
+            return 0;
+        });
+        btns.forEach((btn, i) => {
+            btn.style.order = String(i);
+            btn.setAttribute('data-sort-applied', '1');
+        });
+    });
 }
 
 function initSettings() {

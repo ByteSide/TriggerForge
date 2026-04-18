@@ -486,6 +486,15 @@ $appBgImage = (isset($appMeta['background_image']) && is_string($appMeta['backgr
 
                 <div class="settings-section">
                     <h4 class="settings-section-title">Behavior</h4>
+                    <div class="settings-field">
+                        <span class="settings-label" id="sortOrderLabel">Sort order</span>
+                        <div class="settings-segmented" role="radiogroup" aria-labelledby="sortOrderLabel">
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="sortOrder" data-value="config" aria-checked="false">Config</button>
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="sortOrder" data-value="alphabet" aria-checked="false">A–Z</button>
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="sortOrder" data-value="lastUsed" aria-checked="false">Recent</button>
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="sortOrder" data-value="mostUsed" aria-checked="false">Top</button>
+                        </div>
+                    </div>
                     <label class="settings-field settings-field-toggle">
                         <span class="settings-label">Show "last triggered" timestamps</span>
                         <input type="checkbox" class="settings-toggle" data-setting="showLastTriggered">
