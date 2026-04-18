@@ -707,6 +707,14 @@ function triggerWebhook(button) {
         return;
     }
 
+    // Per-webhook confirm-skip: data-confirm="false" (from config's
+    // 'confirm' => false) fires without the modal. Reserved for low-risk
+    // endpoints where the extra click is annoying (e.g. a status ping).
+    if (button.dataset.confirm === 'false') {
+        executeWebhook(button, webhookId, webhookUrl, webhookName);
+        return;
+    }
+
     // Show confirmation modal before triggering
     showConfirmationModal(webhookName, () => {
         // Re-check in case cooldown kicked in between open and confirm

@@ -61,6 +61,10 @@ function tf_render_webhook_button(array $item, $itemId, $categoryName) {
     if (isset($item['cooldown']) && is_int($item['cooldown']) && $item['cooldown'] >= 0) {
         $cooldownAttr = ' data-cooldown="' . (int)$item['cooldown'] . '"';
     }
+    $confirmAttr = '';
+    if (isset($item['confirm']) && $item['confirm'] === false) {
+        $confirmAttr = ' data-confirm="false"';
+    }
     ?>
 
                                     <!-- Webhook Button -->
@@ -72,7 +76,7 @@ function tf_render_webhook_button(array $item, $itemId, $categoryName) {
                                         data-webhook-url-prod="<?php echo tf_e((string)($item['webhook_url_prod'] ?? '')); ?>"
                                         data-webhook-url-test="<?php echo tf_e((string)($item['webhook_url_test'] ?? '')); ?>"
                                         data-webhook-name="<?php echo tf_e($itemName); ?>"
-                                        data-category="<?php echo tf_e($categoryName); ?>"<?php echo $cooldownAttr; ?>
+                                        data-category="<?php echo tf_e($categoryName); ?>"<?php echo $cooldownAttr; echo $confirmAttr; ?>
                                         title="<?php echo tf_e($itemDesc); ?>"
                                         aria-label="<?php echo tf_e($itemName); ?>"
                                     >
