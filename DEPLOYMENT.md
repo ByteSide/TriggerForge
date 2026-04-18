@@ -91,17 +91,25 @@ Recommended programs:
    ```
    ├── .htaccess
    ├── .htpasswd
-   ├── index.php
+   ├── index.php            # main UI
+   ├── admin.php            # config editor (also Basic-Auth-gated)
+   ├── sw.js                # service worker (CSP-exempt via .htaccess)
    ├── README.md
+   ├── DEPLOYMENT.md
    ├── SETUP_SECURITY.md
-   ├── assets/
-   ├── css/
-   ├── js/
-   ├── config/
-   └── api/
+   ├── api/                 # trigger.php, import.php, export.php
+   ├── assets/              # favicons, fonts, Boxicons
+   ├── config/              # config.php (+ schema, example, backups)
+   ├── css/                 # bg.css, style.css, admin.css
+   ├── js/                  # app.js, admin.js, particles.js,
+   │                        # theme-preload.js
+   └── lib/                 # render.php, validate-config.php, version.php
    ```
 
 4. Make sure the folder structure is preserved
+5. `config/backups/` is **auto-created** the first time you save via the
+   web editor — you do not need to create it manually, but the
+   `config/` directory must be writable by the PHP/Apache user
 
 **Important:** Also upload hidden files (starting with `.`)!
 
@@ -110,10 +118,11 @@ Recommended programs:
 If needed, set the following permissions (CHMOD):
 - `.htaccess` → 644
 - `.htpasswd` → **600** (owner-only; prevents other local users on shared hosting from reading the hashed credentials). If Apache runs as a different user and fails to read it, try 640 with the Apache group as the file group.
-- `index.php` → 644
-- `config/config.php` → **600** (same reason — the config contains your webhook URLs)
-- `api/trigger.php` → 644
-- All folders → 755
+- `index.php`, `admin.php`, `sw.js` → 644
+- `config/config.php` → **600** if you only edit it via FTP, or **644** if you want to use the web editor (`admin.php` writes to this file). Same permission trade-off as `.htpasswd`.
+- `config/` (directory) → **755** and **must be writable** by the PHP/Apache user so `admin.php`, `api/import.php`, and `config/backups/` can work.
+- `api/*.php`, `lib/*.php` → 644
+- All other folders → 755
 
 In FileZilla: Right-click on file → "File Permissions"
 
@@ -151,9 +160,24 @@ from inside the `triggerforge` directory.
 ### 4. Test Webhook
 
 1. Click on a button
-2. You should see "triggering..." 
-3. Then an alert shows success or error message
-4. Check your automation platform to see if the workflow was triggered
+2. You should see the loading state on the button and a spinner icon
+3. A success or error toast appears in the top-right corner
+4. Click "Details" on the toast (when available) to see the upstream response body
+5. Check your automation platform to see if the workflow was triggered
+
+### 5. (Optional) Try the config editor
+
+1. Visit `https://yourdomain.com/triggerforge/admin.php`
+2. Add a category, add an item, fill in the URLs, click **Save config**
+3. On success the main UI at `https://yourdomain.com/triggerforge/` shows the new button (reload if already open)
+4. If the save fails with a writability error, loosen permissions on `config/` until the PHP/Apache user can write there
+
+### 6. (Optional) Install as a PWA
+
+1. From Chrome/Edge: URL-bar install icon, or **Settings > App > Install as app** inside TriggerForge
+2. From iOS Safari: Share → "Add to Home Screen"
+3. From Android Chrome: three-dot menu → "Add to Home Screen"
+4. Once installed, the app runs offline (cached shell) and appears in the OS share sheet as a target
 
 ## Deployment Troubleshooting
 
@@ -192,6 +216,20 @@ from inside the `triggerforge` directory.
 - Automation server is not reachable
 - Webhook is disabled or misconfigured
 - Test the webhook URL directly with curl or Postman
+- Use the **Copy as cURL** action inside the response-viewer modal to reproduce the exact client → server request
+
+### Config Editor Can't Save
+- `config/` directory is not writable by the PHP/Apache user — relax permissions to `755` (directory) and `644` (file)
+- Validator rejected the change — an error modal lists what to fix
+- A backup failed silently; check `config/backups/` exists and is writable
+
+### "New version available" Toast Keeps Appearing
+- The service worker picked up a deploy; click **Reload** to swap to the new version
+- If it loops: hard-reload (Ctrl+Shift+R) or clear the service worker via DevTools (Application → Service Workers → Unregister)
+
+### Offline Queue Not Draining
+- Setting disabled — open Settings > Behavior and enable **Queue fires when offline**
+- The browser hasn't fired an `online` event yet (reloading the page while online drains the queue too)
 
 ## Setup HTTPS
 
@@ -210,18 +248,21 @@ The `.htaccess` automatically redirects to HTTPS once available.
 
 ## Deployment Checklist
 
-- [ ] `.htpasswd` created with generator
-- [ ] `config/config.php` customized with own webhook URLs
+- [ ] `.htpasswd` created with `htpasswd -B` (bcrypt) or the PHP one-liner
+- [ ] `config/config.php` customized with own webhook URLs (or will be created via the web editor)
 - [ ] FTP connection to server established
 - [ ] `/triggerforge/` directory created on server
-- [ ] All files and folders uploaded
-- [ ] File permissions set (if needed)
+- [ ] All files and folders uploaded, **including** `admin.php`, `sw.js`, `js/theme-preload.js`, `lib/`
+- [ ] File permissions set, with `config/` writable by the PHP/Apache user if you plan to use the web editor
 - [ ] Absolute path to `.htpasswd` obtained from hosting panel or SSH `pwd`
 - [ ] `.htaccess` updated with correct path
+- [ ] `config/backups/` left out of version control (already in `.gitignore`) — will be auto-created on first editor save
 - [ ] Login tested in browser
 - [ ] At least one webhook tested
 - [ ] HTTPS working
 - [ ] Mobile view tested
+- [ ] (Optional) installed as PWA on at least one device
+- [ ] (Optional) `pfad.php` deleted from the server if a setup helper was ever uploaded
 
 ## Update Process
 
@@ -230,9 +271,12 @@ To update TriggerForge (e.g. after changes):
 1. Edit files locally
 2. Upload only the changed files via FTP
 3. Overwrite the old files
-4. For CSS/JS changes: Clear browser cache
+4. CSS/JS changes are **cache-busted automatically** via `?v=<filemtime>` query strings — no manual browser cache-clear needed
+5. If you installed the PWA and/or the service worker is active, a **New version available** toast appears the next time a user visits; clicking **Reload** swaps in the fresh copy
 
-**Tip:** Keep a local copy of all files so you can restore if there are problems!
+**Never overwrite `.htpasswd` and `.htaccess` unless you deliberately rotated the credentials or changed Apache settings** — both are gitignored and host-specific.
+
+**Tip:** Use `admin.php`'s **Export config** action before any risky change. The resulting JSON is a one-click rollback via **Import config**, and each save is additionally backed up to `config/backups/config.<ts>.php.bak` (ring buffer of 10).
 
 ---
 
