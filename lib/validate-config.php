@@ -34,9 +34,10 @@ function tf_validate_config(array $config) {
     $idPattern = '/^[A-Za-z0-9_-]+$/';
 
     if (empty($config)) {
-        // Empty is legitimate — the app renders an onboarding page — but
-        // it's worth telling the operator.
-        $errors[] = 'config is empty (no categories defined)';
+        // An empty config is a legitimate state — the app renders an
+        // onboarding page and admin.php starts with an empty editor.
+        // Importing an empty object is the only way to clear everything,
+        // so returning early (without errors) must leave validation OK.
         return $errors;
     }
 
