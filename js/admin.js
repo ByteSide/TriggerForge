@@ -12,6 +12,34 @@
     const INITIAL = window.__TF_INITIAL_CONFIG__;
     let cfg = (INITIAL && typeof INITIAL === 'object' && !Array.isArray(INITIAL)) ? INITIAL : {};
 
+    // Normalise category values. PHP arrays with mixed keys (e.g.
+    //   ['_meta' => [...], 0 => [...], 1 => [...]]
+    // ) serialise to JSON objects, not arrays, so our Array.isArray
+    // checks downstream would otherwise refuse to render them. Pull
+    // numeric-keyed items into a proper array and stash the meta keys
+    // on `arr.__extra` so save() can put them back where they came from.
+    Object.keys(cfg).forEach((catName) => {
+        if (catName[0] === '_') return; // _app etc — leave alone
+        const v = cfg[catName];
+        if (!v || Array.isArray(v) || typeof v !== 'object') return;
+        const arr = [];
+        const extra = {};
+        Object.keys(v).forEach((k) => {
+            const n = parseInt(k, 10);
+            if (!isNaN(n) && String(n) === k && n >= 0) {
+                arr[n] = v[k];
+            } else {
+                extra[k] = v[k];
+            }
+        });
+        // Collapse any holes so forEach iterates cleanly.
+        const dense = arr.filter((x) => x !== undefined);
+        if (Object.keys(extra).length > 0) {
+            Object.defineProperty(dense, '__extra', { value: extra, enumerable: false, writable: true });
+        }
+        cfg[catName] = dense;
+    });
+
     const body = document.getElementById('adminBody');
     const addCatBtn = document.getElementById('adminAddCatBtn');
     const saveBtn = document.getElementById('adminSaveBtn');
@@ -465,10 +493,28 @@
     // ----- save -----
     function save() {
         saveBtn.disabled = true;
+        // Re-merge any per-category __extra (e.g. _meta) back into the
+        // category value so the saved config carries it through. Array
+        // + assoc keys turn into a plain object — PHP's json_decode
+        // converts numeric-string keys back to ints anyway.
+        const payload = {};
+        Object.keys(cfg).forEach((catName) => {
+            const v = cfg[catName];
+            if (Array.isArray(v) && v.__extra && Object.keys(v.__extra).length > 0) {
+                const merged = {};
+                Object.keys(v.__extra).forEach((k) => { merged[k] = v.__extra[k]; });
+                v.forEach((item, i) => {
+                    if (item !== undefined && item !== null) merged[i] = item;
+                });
+                payload[catName] = merged;
+            } else {
+                payload[catName] = v;
+            }
+        });
         fetch('api/import.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(cfg)
+            body: JSON.stringify(payload)
         })
         .then(async (r) => {
             let data = {};
