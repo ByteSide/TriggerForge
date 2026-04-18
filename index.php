@@ -465,6 +465,15 @@ $appBgImage = (isset($appMeta['background_image']) && is_string($appMeta['backgr
                     </div>
 
                     <div class="settings-field">
+                        <span class="settings-label" id="particlesLabel">Background particles</span>
+                        <div class="settings-segmented" role="radiogroup" aria-labelledby="particlesLabel">
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="particles" data-value="standard" aria-checked="false">Standard</button>
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="particles" data-value="minimal" aria-checked="false">Minimal</button>
+                            <button type="button" role="radio" class="settings-seg-btn" data-setting="particles" data-value="off" aria-checked="false">Off</button>
+                        </div>
+                    </div>
+
+                    <div class="settings-field">
                         <span class="settings-label" id="fontScaleLabel">Text size</span>
                         <div class="settings-segmented" role="radiogroup" aria-labelledby="fontScaleLabel">
                             <button type="button" role="radio" class="settings-seg-btn" data-setting="fontScale" data-value="0.875" aria-checked="false">Small</button>

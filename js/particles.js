@@ -32,6 +32,34 @@
         returnSpeed: 0.02
     };
 
+    // Appearance presets — pick one via body[data-particles="…"].
+    // 'standard' matches the legacy defaults; 'minimal' is calmer (fewer
+    // + dimmer); 'off' stops the canvas entirely.
+    const PRESETS = {
+        standard: { desktop: 20, mobile: 5, opacityMul: 1 },
+        minimal:  { desktop: 8,  mobile: 3, opacityMul: 0.5 },
+        off:      { desktop: 0,  mobile: 0, opacityMul: 1 }
+    };
+    function applyPreset(name) {
+        const p = PRESETS[name] || PRESETS.standard;
+        CONFIG.particleCount = p.desktop;
+        CONFIG.particleCountMobile = p.mobile;
+        CONFIG.minOpacity = 0.15 * p.opacityMul;
+        CONFIG.maxOpacity = 0.6 * p.opacityMul;
+        if (!initialized) {
+            if (p.desktop > 0 || p.mobile > 0) init();
+            return;
+        }
+        if (p.desktop === 0 && p.mobile === 0) {
+            // Drop to zero particles — cheaper than tearing the canvas
+            // down entirely and we stay ready to re-populate on preset
+            // change.
+            particles = [];
+        } else {
+            createParticles();
+        }
+    }
+
     // State
     let canvas, ctx;
     let particles = [];
@@ -161,6 +189,29 @@
         // Check for reduced motion preference
         isReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (isReducedMotion) return;
+
+        // Honour the persisted particles preset up-front so we don't
+        // create a 20-particle field that applyPreset immediately tears
+        // down when app.js applies the user's 'minimal' or 'off' choice.
+        let presetName = 'standard';
+        try {
+            const raw = localStorage.getItem('triggerforge_settings');
+            if (raw) {
+                const s = JSON.parse(raw);
+                if (s && typeof s.particles === 'string' && PRESETS[s.particles]) {
+                    presetName = s.particles;
+                }
+            }
+        } catch (e) { /* localStorage unavailable — fall back to standard */ }
+        const p0 = PRESETS[presetName];
+        CONFIG.particleCount = p0.desktop;
+        CONFIG.particleCountMobile = p0.mobile;
+        CONFIG.minOpacity = 0.15 * p0.opacityMul;
+        CONFIG.maxOpacity = 0.6 * p0.opacityMul;
+        if (p0.desktop === 0 && p0.mobile === 0) {
+            initialized = true; // marker; re-enabling later goes through applyPreset
+            return;
+        }
 
         canvas = document.getElementById('particle-canvas');
         if (!canvas) return;
@@ -336,6 +387,7 @@
     window.TriggerForgeParticles = {
         init,
         destroy,
+        applyPreset,
         getParticleCount: () => particles.length
     };
 

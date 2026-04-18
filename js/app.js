@@ -3200,6 +3200,9 @@ function applySettings() {
     body.dataset.density = s.density;
     body.dataset.layout = s.layout;
     body.dataset.particles = s.particles;
+    if (window.TriggerForgeParticles && typeof window.TriggerForgeParticles.applyPreset === 'function') {
+        window.TriggerForgeParticles.applyPreset(s.particles);
+    }
     if (typeof s.fontScale === 'number' && s.fontScale > 0) {
         html.style.setProperty('--font-scale', String(s.fontScale));
     }
