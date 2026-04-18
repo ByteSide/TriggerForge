@@ -23,6 +23,26 @@ html[data-theme="light"] {
         linear-gradient(to bottom, #f5f7fa 0%, #eceff3 100%);
 }
 
+/* Optional custom background image via config's _app.background_image.
+   Dark overlay preserves text contrast regardless of the image's
+   palette. background-attachment:fixed keeps the backdrop stable
+   while the container scrolls. */
+body[style*="--app-bg-image"] {
+    background-image:
+        linear-gradient(rgba(6, 23, 30, 0.72), rgba(6, 23, 30, 0.88)),
+        var(--app-bg-image);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+}
+
+html[data-theme="light"] body[style*="--app-bg-image"] {
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.8)),
+        var(--app-bg-image);
+}
+
 /* Particle Canvas - fullscreen behind content */
 #particle-canvas {
     position: fixed;

@@ -21,6 +21,18 @@ if (!is_array($config)) {
 // HTML render helpers (button / category markup).
 require __DIR__ . '/lib/render.php';
 require __DIR__ . '/lib/version.php';
+
+// Optional app-level branding from config's reserved '_app' key.
+// Plain strings only — no HTML pass-through; an imported/untrusted
+// config can't inject markup into the header or page <title>.
+$appMeta = isset($config['_app']) && is_array($config['_app']) ? $config['_app'] : [];
+$appTitle = (isset($appMeta['title']) && is_string($appMeta['title']) && trim($appMeta['title']) !== '')
+    ? trim($appMeta['title'])
+    : 'TriggerForge';
+$appBgImage = (isset($appMeta['background_image']) && is_string($appMeta['background_image'])
+    && preg_match('#^https?://|^/|^\./|^assets/#i', $appMeta['background_image']))
+    ? $appMeta['background_image']
+    : '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -30,7 +42,7 @@ require __DIR__ . '/lib/version.php';
     <meta name="description" content="TriggerForge - Webhook Trigger Interface">
     <meta name="theme-color" content="#06171E">
     <meta name="color-scheme" content="dark light">
-    <title>TriggerForge</title>
+    <title><?php echo htmlspecialchars($appTitle); ?></title>
     <script>
     // Apply persisted theme BEFORE the CSS parses so a light-mode user
     // doesn't see a dark-theme flash on every page load. Same logic as
@@ -74,7 +86,7 @@ require __DIR__ . '/lib/version.php';
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
-<body>
+<body<?php echo $appBgImage !== '' ? ' style="--app-bg-image: url(\'' . htmlspecialchars($appBgImage, ENT_QUOTES) . '\')"' : ''; ?>>
     <a class="skip-link" href="#main-content">Skip to content</a>
     <noscript>
         <div style="position:fixed;top:0;left:0;right:0;padding:16px;background:#ef4444;color:#fff;font-family:monospace;text-align:center;z-index:99999;">
@@ -87,7 +99,11 @@ require __DIR__ . '/lib/version.php';
     <div class="container">
         <!-- Header with Typography Logo -->
         <header class="header">
-            <h1 class="logo">Trigger<span class="logo__forge">Forge</span></h1>
+            <?php if ($appTitle === 'TriggerForge'): ?>
+                <h1 class="logo">Trigger<span class="logo__forge">Forge</span></h1>
+            <?php else: ?>
+                <h1 class="logo"><?php echo htmlspecialchars($appTitle); ?></h1>
+            <?php endif; ?>
 
             <!-- History drawer toggle (anchored top-right of the header) -->
             <button type="button" class="header-icon-btn history-btn" id="historyBtn" aria-label="Open trigger history" aria-expanded="false" title="History">
@@ -197,6 +213,10 @@ require __DIR__ . '/lib/version.php';
                 ?>
                 <?php foreach ($config as $categoryName => $webhooks): ?>
                     <?php
+                        // Skip reserved app/category meta keys (e.g. '_app',
+                        // '_meta' at the top level) so they don't render as
+                        // a category section.
+                        if (is_string($categoryName) && strlen($categoryName) > 0 && $categoryName[0] === '_') { continue; }
                         if (!is_array($webhooks)) { continue; }
                         // Pull out optional '_meta' (category icon / color /
                         // future category-level options) before iterating

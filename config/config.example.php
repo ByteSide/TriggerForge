@@ -76,13 +76,23 @@
 
 return [
     // =========================================
+    // Optional: app-level branding. Reserved top-level key, skipped by
+    // both the category iterator and the URL whitelist collector.
+    // =========================================
+    // '_app' => [
+    //     'title' => 'Acme Operations',          // <title> + header logo text
+    //     'background_image' => 'assets/my-bg.jpg', // URL or relative asset path
+    // ],
+
+    // =========================================
     // n8n Webhooks Example
     // =========================================
     'Automation' => [
         // Optional per-category metadata. The '_meta' key is reserved and
         // skipped during item iteration.
         //   '_meta' => [
-        //       'icon' => 'bx-cog',            // Boxicon class for the category header
+        //       'icon'  => 'bx-cog',           // Boxicon class for the category header
+        //       'color' => '#ef4444',          // hex accent for the left border
         //   ],
         [
             'type' => 'webhook',

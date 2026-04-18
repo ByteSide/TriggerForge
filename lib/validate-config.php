@@ -41,6 +41,24 @@ function tf_validate_config(array $config) {
     }
 
     foreach ($config as $categoryName => $webhooks) {
+        // Reserved app-level metadata (optional). Not a category.
+        if ($categoryName === '_app') {
+            if (!is_array($webhooks)) {
+                $errors[] = '_app: must be an object';
+                continue;
+            }
+            if (isset($webhooks['title']) && !is_string($webhooks['title'])) {
+                $errors[] = '_app.title: must be a string';
+            }
+            if (isset($webhooks['background_image'])) {
+                if (!is_string($webhooks['background_image']) ||
+                    !preg_match('#^https?://|^/|^\./|^assets/#i', $webhooks['background_image'])) {
+                    $errors[] = '_app.background_image: must be a URL or a relative assets/ path';
+                }
+            }
+            continue;
+        }
+
         $catLabel = is_string($categoryName) ? $categoryName : '#' . $categoryName;
         if (!is_array($webhooks)) {
             $errors[] = "[$catLabel]: value is not an array (expected a list of items)";
@@ -55,6 +73,9 @@ function tf_validate_config(array $config) {
                 $meta = $webhooks['_meta'];
                 if (isset($meta['icon']) && (!is_string($meta['icon']) || !preg_match($iconPattern, $meta['icon']))) {
                     $errors[] = "[$catLabel]._meta.icon: '" . (is_string($meta['icon']) ? $meta['icon'] : gettype($meta['icon'])) . "' is not a valid Boxicon class name";
+                }
+                if (isset($meta['color']) && (!is_string($meta['color']) || !preg_match('/^#[0-9a-fA-F]{3,8}$/', $meta['color']))) {
+                    $errors[] = "[$catLabel]._meta.color: must be a hex color like #ef4444";
                 }
             }
         }

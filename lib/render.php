@@ -37,8 +37,15 @@ if (!function_exists('tf_icon')) {
 function tf_render_category_open($categoryId, $categoryName, array $meta = array()) {
     // Optional per-category icon override via config's '_meta' => ['icon' => ...].
     $icon = tf_icon(isset($meta['icon']) ? $meta['icon'] : null, 'bx-folder');
+    // Optional per-category accent color — gets applied as a CSS custom
+    // property so stylesheet rules can fall back to the global accent.
+    $colorStyle = '';
+    if (isset($meta['color']) && is_string($meta['color'])
+        && preg_match('/^#[0-9a-fA-F]{3,8}$/', $meta['color'])) {
+        $colorStyle = ' style="--cat-color: ' . tf_e($meta['color']) . '"';
+    }
     ?>
-                    <section class="category-section">
+                    <section class="category-section"<?php echo $colorStyle; ?>>
                         <div class="category-header" data-category-id="<?php echo tf_e($categoryId); ?>" role="button" tabindex="0" aria-expanded="true">
                             <i class='bx <?php echo tf_e($icon); ?> category-header-icon'></i>
                             <h2 class="category-title"><?php echo tf_e($categoryName); ?></h2>

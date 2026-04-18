@@ -439,7 +439,7 @@ body {
     transition: all var(--transition-base);
     position: relative;
     overflow: hidden;
-    border-left: 3px solid var(--color-primary-dark);
+    border-left: 3px solid var(--cat-color, var(--color-primary-dark));
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     touch-action: manipulation;
