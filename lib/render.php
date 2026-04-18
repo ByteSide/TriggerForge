@@ -98,7 +98,13 @@ function tf_render_webhook_button(array $item, $itemId, $categoryName) {
                                         <span class="trigger-btn-cooldown" aria-hidden="true"></span>
                                         <i class='bx <?php echo tf_e(tf_icon($item['icon'] ?? null, 'bx-bolt')); ?> trigger-btn-icon'></i>
                                         <span class="trigger-btn-text"><?php echo tf_e($itemName); ?></span>
-                                        <i class='bx bx-star trigger-btn-favorite' data-webhook-id="<?php echo tf_e($itemId); ?>" title="Add to favorites"></i>
+                                        <i class='bx bx-star trigger-btn-favorite'
+                                           data-webhook-id="<?php echo tf_e($itemId); ?>"
+                                           role="button"
+                                           tabindex="0"
+                                           aria-label="Toggle favorite for <?php echo tf_e($itemName); ?>"
+                                           aria-pressed="false"
+                                           title="Toggle favorite"></i>
                                     </button>
 
     <?php
@@ -148,7 +154,13 @@ function tf_render_link_button(array $item, $itemId, $categoryName) {
                                         <?php endif; ?>
                                         <span class="link-btn-text"><?php echo tf_e($itemName); ?></span>
                                         <i class='bx bx-link-alt link-btn-indicator'></i>
-                                        <i class='bx bx-star link-btn-favorite' data-link-id="<?php echo tf_e($itemId); ?>" title="Add to favorites"></i>
+                                        <i class='bx bx-star link-btn-favorite'
+                                           data-link-id="<?php echo tf_e($itemId); ?>"
+                                           role="button"
+                                           tabindex="0"
+                                           aria-label="Toggle favorite for <?php echo tf_e($itemName); ?>"
+                                           aria-pressed="false"
+                                           title="Toggle favorite"></i>
                                     </button>
 
     <?php

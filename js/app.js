@@ -329,30 +329,40 @@ function toggleCategory(categoryId) {
 function initFavorites() {
     // Migrate old favorites format to new format (backwards compatibility)
     migrateFavoritesFormat();
-    
+
     // Render favorites bar
     renderFavorites();
-    
-    // Add click handlers to webhook star icons
-    const webhookStars = document.querySelectorAll('.trigger-btn-favorite');
-    webhookStars.forEach(star => {
-        star.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent button click
-            const webhookId = star.getAttribute('data-webhook-id');
-            toggleFavorite(webhookId, 'webhook');
+
+    // Wire up every favorite star with BOTH click and keyboard handlers.
+    // The star is an <i role="button" tabindex="0"> (not a real <button>
+    // — nested buttons would be invalid HTML inside .trigger-btn), so
+    // Enter/Space don't synthesise a click automatically. We dispatch the
+    // toggle directly from the keydown handler instead.
+    const attachStarHandlers = (star, idAttr, type) => {
+        if (!star.hasAttribute('role')) star.setAttribute('role', 'button');
+        if (!star.hasAttribute('tabindex')) star.setAttribute('tabindex', '0');
+
+        const fire = (e) => {
+            e.stopPropagation();
+            const id = star.getAttribute(idAttr);
+            if (id) toggleFavorite(id, type);
+        };
+        star.addEventListener('click', fire);
+        star.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                fire(e);
+            }
         });
+    };
+
+    document.querySelectorAll('.trigger-btn-favorite').forEach(star => {
+        attachStarHandlers(star, 'data-webhook-id', 'webhook');
     });
-    
-    // Add click handlers to link star icons
-    const linkStars = document.querySelectorAll('.link-btn-favorite');
-    linkStars.forEach(star => {
-        star.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent button click
-            const linkId = star.getAttribute('data-link-id');
-            toggleFavorite(linkId, 'link');
-        });
+    document.querySelectorAll('.link-btn-favorite').forEach(star => {
+        attachStarHandlers(star, 'data-link-id', 'link');
     });
-    
+
     // Update star states
     updateFavoriteStars();
 }
@@ -560,38 +570,24 @@ function createFavoriteButton(itemId, name, position, type, url = null, faviconS
 }
 
 function updateFavoriteStars() {
-    // Update webhook stars
-    const webhookStars = document.querySelectorAll('.trigger-btn-favorite');
-    webhookStars.forEach(star => {
-        const webhookId = star.getAttribute('data-webhook-id');
-        const isFavorite = state.favorites.some(fav => fav.id === webhookId && fav.type === 'webhook');
-        
-        if (isFavorite) {
-            star.classList.add('active');
-            star.classList.remove('bx-star');
-            star.classList.add('bxs-star');
-        } else {
-            star.classList.remove('active');
-            star.classList.remove('bxs-star');
-            star.classList.add('bx-star');
-        }
+    const paint = (star, isFavorite) => {
+        star.classList.toggle('active', isFavorite);
+        star.classList.toggle('bxs-star', isFavorite);
+        star.classList.toggle('bx-star', !isFavorite);
+        // aria-pressed is the standard way to expose a toggle-button
+        // state to screen readers. Pair with the aria-label emitted by
+        // PHP for a full "toggle favorite for X, pressed/not pressed"
+        // announcement.
+        star.setAttribute('aria-pressed', isFavorite ? 'true' : 'false');
+    };
+
+    document.querySelectorAll('.trigger-btn-favorite').forEach(star => {
+        const id = star.getAttribute('data-webhook-id');
+        paint(star, state.favorites.some(fav => fav.id === id && fav.type === 'webhook'));
     });
-    
-    // Update link stars
-    const linkStars = document.querySelectorAll('.link-btn-favorite');
-    linkStars.forEach(star => {
-        const linkId = star.getAttribute('data-link-id');
-        const isFavorite = state.favorites.some(fav => fav.id === linkId && fav.type === 'link');
-        
-        if (isFavorite) {
-            star.classList.add('active');
-            star.classList.remove('bx-star');
-            star.classList.add('bxs-star');
-        } else {
-            star.classList.remove('active');
-            star.classList.remove('bxs-star');
-            star.classList.add('bx-star');
-        }
+    document.querySelectorAll('.link-btn-favorite').forEach(star => {
+        const id = star.getAttribute('data-link-id');
+        paint(star, state.favorites.some(fav => fav.id === id && fav.type === 'link'));
     });
 }
 
