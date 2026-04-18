@@ -452,6 +452,22 @@ require __DIR__ . '/lib/render.php';
                 </div>
 
                 <div class="settings-section">
+                    <h4 class="settings-section-title">Behavior</h4>
+                    <label class="settings-field settings-field-toggle">
+                        <span class="settings-label">Show "last triggered" timestamps</span>
+                        <input type="checkbox" class="settings-toggle" data-setting="showLastTriggered">
+                    </label>
+                    <label class="settings-field settings-field-toggle">
+                        <span class="settings-label">Show trigger-count badges</span>
+                        <input type="checkbox" class="settings-toggle" data-setting="showCounters">
+                    </label>
+                    <label class="settings-field settings-field-toggle">
+                        <span class="settings-label">Haptic feedback on successful fire</span>
+                        <input type="checkbox" class="settings-toggle" data-setting="haptic">
+                    </label>
+                </div>
+
+                <div class="settings-section">
                     <h4 class="settings-section-title">Data</h4>
                     <a href="admin.php" class="settings-action-btn">
                         <i class='bx bx-edit' aria-hidden="true"></i>

@@ -44,12 +44,11 @@ const DEFAULT_SETTINGS = {
     showLastTriggered: true,
     haptic: true,
     favoritesCollapsed: false,
-    // Feature flags — each gates a not-yet-stable feature.
+    // Feature flags — each gates a feature that is opt-in because it
+    // asks for permissions or changes behaviour in a way not every user
+    // wants. Shipped/stable features (history, chains, bulk-fire, undo)
+    // are NOT flagged — they're always on and quietly useful.
     features: {
-        history: false,
-        chains: false,
-        bulkFire: false,
-        undo: false,
         pullToRefresh: false,
         offlineQueue: false,
         pushNotifications: false
@@ -1157,6 +1156,12 @@ function handleSuccess(button, webhookName, payload, durationMs) {
 
     // Add success class for color transition
     button.classList.add('success');
+
+    // Haptic feedback on mobile — short buzz confirms the fire without
+    // the user having to look at the screen. Opt-in via settings.
+    if (state.settings.haptic && navigator.vibrate) {
+        try { navigator.vibrate(40); } catch (e) { /* some browsers throw on gesture-less vibrate */ }
+    }
 
     // Toast — action priority: Undo (if configured) > Details (if the
     // upstream returned something worth inspecting) > none.
@@ -2723,6 +2728,18 @@ function initSettings() {
             updateSettingsUI();
         });
     });
+    // Checkbox-style toggles (boolean settings).
+    modal.querySelectorAll('input[type="checkbox"][data-setting]').forEach((input) => {
+        input.addEventListener('change', () => {
+            const key = input.dataset.setting;
+            if (!(key in DEFAULT_SETTINGS)) return;
+            if (typeof DEFAULT_SETTINGS[key] !== 'boolean') return;
+            state.settings[key] = input.checked;
+            saveState();
+            applySettings();
+            updateSettingsUI();
+        });
+    });
     updateSettingsUI();
 
     // Reset-to-defaults button. Does NOT clear favorites/cooldowns/history
@@ -2834,6 +2851,11 @@ function updateSettingsUI() {
         const active = state.settings[key] === value;
         btn.classList.toggle('active', active);
         btn.setAttribute('aria-checked', active ? 'true' : 'false');
+    });
+    modal.querySelectorAll('input[type="checkbox"][data-setting]').forEach((input) => {
+        const key = input.dataset.setting;
+        if (!(key in DEFAULT_SETTINGS)) return;
+        input.checked = !!state.settings[key];
     });
 }
 
