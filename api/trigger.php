@@ -141,7 +141,12 @@ foreach ($config as $category => $webhooks) {
         // default minimal payload (no item payload/method/headers
         // overrides) — semantically an undo is a separate action, not a
         // copy of the main fire.
-        if (isset($webhook['undo_url']) && is_string($webhook['undo_url'])) {
+        //
+        // Only register this stub if the URL isn't already known: a full
+        // item's overrides must never be clobbered by an undo stub from
+        // another item that happens to share the same URL.
+        if (isset($webhook['undo_url']) && is_string($webhook['undo_url'])
+            && !isset($urlToItem[$webhook['undo_url']])) {
             $urlToItem[$webhook['undo_url']] = [
                 'type' => 'webhook',
                 'name' => (isset($webhook['name']) ? $webhook['name'] : 'Undo') . ' (undo)',
