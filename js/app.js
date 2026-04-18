@@ -1759,6 +1759,9 @@ function resolveCooldownDuration(button) {
     if (raw === undefined || raw === '') return COOLDOWN_DURATION;
     const n = parseInt(raw, 10);
     if (isNaN(n) || n < 0) return COOLDOWN_DURATION;
+    // Defensive cap matching the validator's upper bound so a hand-edited
+    // config.php with a huge value can't brick a button across reloads.
+    if (n > 3600000) return 3600000;
     return n;
 }
 

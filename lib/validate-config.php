@@ -135,8 +135,14 @@ function tf_validate_config(array $config) {
                     }
                 }
 
-                if (isset($item['cooldown']) && (!is_int($item['cooldown']) || $item['cooldown'] < 0)) {
-                    $errors[] = "$itemLabel.cooldown: must be a non-negative integer (milliseconds)";
+                if (isset($item['cooldown'])) {
+                    if (!is_int($item['cooldown']) || $item['cooldown'] < 0) {
+                        $errors[] = "$itemLabel.cooldown: must be a non-negative integer (milliseconds)";
+                    } elseif ($item['cooldown'] > 3600000) {
+                        // Cap at an hour — huge values would leave users
+                        // stuck with a disabled button across reloads.
+                        $errors[] = "$itemLabel.cooldown: must be ≤ 3 600 000 ms (1 hour)";
+                    }
                 }
                 if (isset($item['confirm']) && !is_bool($item['confirm'])) {
                     $errors[] = "$itemLabel.confirm: must be true or false";
