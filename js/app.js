@@ -2128,8 +2128,12 @@ function showConfirmationModal(webhookName, callback) {
     // modal — breaking the aria-modal="true" contract.
     const container = document.querySelector('.container');
     const scrollBtn = document.getElementById('scrollToTopBtn');
+    const historyDrawer = document.getElementById('historyDrawer');
+    const bulkBar = document.getElementById('bulkFireBar');
     if (container) container.setAttribute('inert', '');
     if (scrollBtn) scrollBtn.setAttribute('inert', '');
+    if (historyDrawer) historyDrawer.setAttribute('inert', '');
+    if (bulkBar) bulkBar.setAttribute('inert', '');
 
     // Lock body scroll so the page behind the modal doesn't drift around
     // while the user is deciding. Restored in hideConfirmationModal.
@@ -2159,8 +2163,25 @@ function hideConfirmationModal() {
     // restore target below is actually focusable again.
     const container = document.querySelector('.container');
     const scrollBtn = document.getElementById('scrollToTopBtn');
+    const historyDrawer = document.getElementById('historyDrawer');
+    const bulkBar = document.getElementById('bulkFireBar');
     if (container) container.removeAttribute('inert');
     if (scrollBtn) scrollBtn.removeAttribute('inert');
+    // Only un-inert the drawer/bar if (a) no other modal is still open,
+    // AND (b) the drawer/bar is actually visible. A closed drawer keeps
+    // its own inert (set in HTML) so off-screen content stays
+    // un-tabbable.
+    const anyOther = document.querySelector(
+        '.confirmation-modal.active, .settings-modal.active, .generic-modal.active'
+    );
+    if (!anyOther) {
+        if (historyDrawer && historyDrawer.classList.contains('active')) {
+            historyDrawer.removeAttribute('inert');
+        }
+        if (bulkBar && bulkBar.classList.contains('active')) {
+            bulkBar.removeAttribute('inert');
+        }
+    }
 
     // Restore focus BEFORE marking the modal aria-hidden / inert. ARIA
     // forbids aria-hidden on an element that contains the currently focused
@@ -2536,8 +2557,12 @@ function openModal(opts) {
     backdrop.removeAttribute('inert');
     const container = document.querySelector('.container');
     const scrollBtn = document.getElementById('scrollToTopBtn');
+    const historyDrawer = document.getElementById('historyDrawer');
+    const bulkBar = document.getElementById('bulkFireBar');
     if (container) container.setAttribute('inert', '');
     if (scrollBtn) scrollBtn.setAttribute('inert', '');
+    if (historyDrawer) historyDrawer.setAttribute('inert', '');
+    if (bulkBar) bulkBar.setAttribute('inert', '');
     document.body.style.overflow = 'hidden';
 
     setTimeout(() => {
@@ -2563,8 +2588,25 @@ function closeGenericModal() {
 
     const container = document.querySelector('.container');
     const scrollBtn = document.getElementById('scrollToTopBtn');
+    const historyDrawer = document.getElementById('historyDrawer');
+    const bulkBar = document.getElementById('bulkFireBar');
     if (container) container.removeAttribute('inert');
     if (scrollBtn) scrollBtn.removeAttribute('inert');
+    // Only un-inert the drawer/bar if (a) no other modal is still open,
+    // AND (b) the drawer/bar is actually visible. A closed drawer keeps
+    // its own inert (set in HTML) so off-screen content stays
+    // un-tabbable.
+    const anyOther = document.querySelector(
+        '.confirmation-modal.active, .settings-modal.active, .generic-modal.active'
+    );
+    if (!anyOther) {
+        if (historyDrawer && historyDrawer.classList.contains('active')) {
+            historyDrawer.removeAttribute('inert');
+        }
+        if (bulkBar && bulkBar.classList.contains('active')) {
+            bulkBar.removeAttribute('inert');
+        }
+    }
 
     if (_genericModalReturnFocus && typeof _genericModalReturnFocus.focus === 'function') {
         try { _genericModalReturnFocus.focus(); } catch (e) { /* detached */ }
