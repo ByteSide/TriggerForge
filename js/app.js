@@ -780,12 +780,12 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
         const payload = (data && typeof data === 'object') ? data : {};
         if (payload.success) {
             // Success state
-            handleSuccess(button, webhookName);
+            handleSuccess(button, webhookName, payload);
             startCooldown(webhookId, button);
         } else {
             // Error state
             const msg = typeof payload.message === 'string' ? payload.message : 'Unknown error';
-            handleError(button, msg);
+            handleError(button, msg, payload);
             button.disabled = false;
         }
     })
@@ -802,7 +802,7 @@ function executeWebhook(button, webhookId, webhookUrl, webhookName) {
     });
 }
 
-function handleSuccess(button, webhookName) {
+function handleSuccess(button, webhookName, payload) {
     // Record stats BEFORE the visual flash so even a very quick re-render
     // sees the updated counters. Guard on webhookId because the legacy
     // DOM structure lets us reach this without one in edge cases.
@@ -823,8 +823,14 @@ function handleSuccess(button, webhookName) {
     // Add success class for color transition
     button.classList.add('success');
 
-    // Show toast
-    showToast(`✓ ${webhookName} triggered successfully!`, 'success');
+    // Toast — with a "Details" action when the upstream returned a body
+    // worth inspecting (e.g. an n8n execution id, a created-resource
+    // record). Skips the action entirely for empty/no-content responses
+    // so the common case stays clutter-free.
+    const action = _responseHasDetails(payload)
+        ? { label: 'Details', onClick: () => openResponseViewer(webhookName, payload, true) }
+        : null;
+    showToast(`✓ ${webhookName} triggered successfully!`, 'success', action);
 
     // Reset after 1 second. Gate on the class so we don't stomp on the
     // icon if the user triggered another request in the meantime (which
@@ -836,7 +842,7 @@ function handleSuccess(button, webhookName) {
     }, 1000);
 }
 
-function handleError(button, message) {
+function handleError(button, message, payload) {
     // Change icon temporarily
     const icon = button.querySelector('.trigger-btn-icon');
     const originalIconClass = icon ? icon.className : '';
@@ -845,8 +851,14 @@ function handleError(button, message) {
     // Add error class for shake animation
     button.classList.add('error');
 
-    // Show toast
-    showToast(`✗ Error: ${message}`, 'error');
+    // Details link when the upstream returned a body or a meaningful
+    // HTTP code — typically carries the real failure reason that the
+    // top-line toast message can't fit.
+    const webhookName = button.getAttribute('data-webhook-name') || 'Webhook';
+    const action = _responseHasDetails(payload)
+        ? { label: 'Details', onClick: () => openResponseViewer(webhookName, payload, false) }
+        : null;
+    showToast(`✗ Error: ${message}`, 'error', action);
 
     // Reset after 1 second. Same rationale as handleSuccess: bail out if
     // the button has already moved on to another state.
@@ -986,7 +998,14 @@ function restoreCooldowns() {
 }
 
 // === Toast Notifications ===
-function showToast(message, type = 'info') {
+/**
+ * @param {string} message
+ * @param {string} [type='info']
+ * @param {{label: string, onClick: function}} [action] Optional inline
+ *        action button (e.g. "Details" link on the response viewer).
+ *        Clicking runs onClick() then closes the toast.
+ */
+function showToast(message, type = 'info', action = null) {
     const container = document.getElementById('toastContainer');
     if (!container) return;
 
@@ -1019,6 +1038,18 @@ function showToast(message, type = 'info') {
     msgEl.className = 'toast-message';
     msgEl.textContent = message;
     content.appendChild(msgEl);
+
+    if (action && typeof action.onClick === 'function') {
+        const actBtn = document.createElement('button');
+        actBtn.type = 'button';
+        actBtn.className = 'toast-action';
+        actBtn.textContent = String(action.label || 'Details');
+        actBtn.addEventListener('click', () => {
+            try { action.onClick(); } catch (e) { console.error(e); }
+            closeToast(toast);
+        });
+        content.appendChild(actBtn);
+    }
 
     const closeBtn = document.createElement('button');
     closeBtn.className = 'toast-close';
@@ -1550,6 +1581,99 @@ function openCheatsheet() {
         title: 'Keyboard Shortcuts',
         icon: 'bx-keyboard',
         bodyEl: ul,
+        actions: [{ label: 'Close', variant: 'default', icon: 'bx-x' }]
+    });
+}
+
+/**
+ * Whether the server's response envelope carries data worth opening a
+ * details modal for. Prevents the "Details" link from cluttering toasts
+ * when the upstream replied with an empty body (common on webhook
+ * endpoints that ack with HTTP 204).
+ */
+function _responseHasDetails(payload) {
+    if (!payload || typeof payload !== 'object') return false;
+    if (typeof payload.response_body === 'string' && payload.response_body.length > 0) return true;
+    if (payload.response_headers && typeof payload.response_headers === 'object'
+        && Object.keys(payload.response_headers).length > 0) return true;
+    return false;
+}
+
+/**
+ * Render the response viewer modal for a given trigger payload.
+ * @param {string} webhookName Display name (used in the modal title).
+ * @param {object} payload     Server envelope from api/trigger.php.
+ * @param {boolean} success    Whether this was a success path (picks icon).
+ */
+function openResponseViewer(webhookName, payload, success) {
+    const container = document.createElement('div');
+
+    // Top meta row: HTTP code + content-type.
+    const meta = document.createElement('div');
+    meta.className = 'response-meta';
+    if (payload.http_code) {
+        const codeSpan = document.createElement('span');
+        const strong = document.createElement('strong');
+        strong.textContent = 'HTTP';
+        codeSpan.appendChild(strong);
+        codeSpan.appendChild(document.createTextNode(' ' + payload.http_code));
+        meta.appendChild(codeSpan);
+    }
+    if (payload.response_content_type) {
+        const ctSpan = document.createElement('span');
+        const strong = document.createElement('strong');
+        strong.textContent = 'Content-Type';
+        ctSpan.appendChild(strong);
+        ctSpan.appendChild(document.createTextNode(' ' + payload.response_content_type));
+        meta.appendChild(ctSpan);
+    }
+    if (typeof payload.response_bytes === 'number') {
+        const sizeSpan = document.createElement('span');
+        const strong = document.createElement('strong');
+        strong.textContent = 'Size';
+        sizeSpan.appendChild(strong);
+        const suffix = payload.response_truncated ? ' (truncated)' : '';
+        sizeSpan.appendChild(document.createTextNode(' ' + payload.response_bytes + ' B' + suffix));
+        meta.appendChild(sizeSpan);
+    }
+    if (meta.children.length) container.appendChild(meta);
+
+    // Response headers — collapsible so the body stays front and centre.
+    if (payload.response_headers && typeof payload.response_headers === 'object') {
+        const keys = Object.keys(payload.response_headers);
+        if (keys.length) {
+            const details = document.createElement('details');
+            const summary = document.createElement('summary');
+            summary.textContent = 'Response headers (' + keys.length + ')';
+            details.appendChild(summary);
+            const dl = document.createElement('dl');
+            keys.forEach(k => {
+                const dt = document.createElement('dt');
+                dt.textContent = k;
+                const dd = document.createElement('dd');
+                dd.textContent = String(payload.response_headers[k]);
+                dl.appendChild(dt);
+                dl.appendChild(dd);
+            });
+            details.appendChild(dl);
+            container.appendChild(details);
+        }
+    }
+
+    // Body. Pretty-print JSON when the content type says so.
+    const pre = document.createElement('pre');
+    let body = typeof payload.response_body === 'string' ? payload.response_body : '';
+    const ct = String(payload.response_content_type || '').toLowerCase();
+    if (body && ct.indexOf('application/json') !== -1) {
+        try { body = JSON.stringify(JSON.parse(body), null, 2); } catch (e) { /* keep raw */ }
+    }
+    pre.textContent = body !== '' ? body : '(empty response body)';
+    container.appendChild(pre);
+
+    openModal({
+        title: 'Response — ' + webhookName,
+        icon: success ? 'bx-check-circle' : 'bx-error-circle',
+        bodyEl: container,
         actions: [{ label: 'Close', variant: 'default', icon: 'bx-x' }]
     });
 }

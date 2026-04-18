@@ -168,11 +168,13 @@ if (defined('CURLOPT_PROTOCOLS_STR')) {
     $protocolOpts[CURLOPT_PROTOCOLS] = $allowedProtocols;
 }
 
-// Cap how much of the webhook response we'll buffer. We only care about
-// the HTTP status code, not the body — but without a cap a malicious or
-// broken target could return gigabytes and exhaust PHP memory.
+// Cap how much of the webhook response we'll buffer. Enough to show the
+// user a meaningful response snippet in the details viewer while still
+// capping memory against an abusive target returning gigabytes.
 $maxResponseBytes = 65536; // 64 KB
 $bytesReceived = 0;
+$responseBody = '';
+$responseHeaders = [];
 
 curl_setopt_array($ch, $protocolOpts + [
     // No CURLOPT_RETURNTRANSFER: CURLOPT_WRITEFUNCTION drives the body
@@ -200,12 +202,32 @@ curl_setopt_array($ch, $protocolOpts + [
         // Apache's .htaccess isn't evaluated.
         'triggered_by' => $_SERVER['PHP_AUTH_USER'] ?? 'anonymous'
     ]),
-    CURLOPT_WRITEFUNCTION => function ($ch, $data) use (&$bytesReceived, $maxResponseBytes) {
+    CURLOPT_WRITEFUNCTION => function ($ch, $data) use (&$bytesReceived, &$responseBody, $maxResponseBytes) {
         $bytesReceived += strlen($data);
         if ($bytesReceived > $maxResponseBytes) {
+            // Truncate the final chunk at the cap so the response body we
+            // do expose stays under the limit.
+            $allowed = $maxResponseBytes - ($bytesReceived - strlen($data));
+            if ($allowed > 0) {
+                $responseBody .= substr($data, 0, $allowed);
+            }
             return 0; // signal cURL to abort the transfer
         }
+        $responseBody .= $data;
         return strlen($data);
+    },
+    CURLOPT_HEADERFUNCTION => function ($ch, $header) use (&$responseHeaders) {
+        $len = strlen($header);
+        $trimmed = trim($header);
+        if ($trimmed === '') return $len;
+        // First line is "HTTP/x.y 200 OK" — not a header, skip.
+        if (stripos($trimmed, 'HTTP/') === 0) return $len;
+        $colonPos = strpos($trimmed, ':');
+        if ($colonPos === false) return $len;
+        $name = strtolower(trim(substr($trimmed, 0, $colonPos)));
+        $value = trim(substr($trimmed, $colonPos + 1));
+        $responseHeaders[$name] = $value;
+        return $len;
     },
 ]);
 
@@ -231,20 +253,30 @@ if ($curlError && $httpCode === 0) {
     exit;
 }
 
+// Build a response envelope that always carries the detail payload the
+// client's response viewer can render. JSON_INVALID_UTF8_SUBSTITUTE so a
+// binary or mis-encoded upstream body doesn't break json_encode().
+$detail = [
+    'http_code' => (int)$httpCode,
+    'response_body' => $responseBody,
+    'response_headers' => $responseHeaders,
+    'response_content_type' => isset($responseHeaders['content-type']) ? $responseHeaders['content-type'] : '',
+    'response_bytes' => $bytesReceived,
+    'response_truncated' => $bytesReceived > $maxResponseBytes,
+];
+
 if ($httpCode >= 200 && $httpCode < 300) {
-    echo json_encode([
+    echo json_encode(array_merge([
         'success' => true,
         'message' => 'Webhook triggered successfully!',
-        'http_code' => $httpCode
-    ]);
+    ], $detail), JSON_INVALID_UTF8_SUBSTITUTE);
 } else {
     // Only forward recognized 4xx/5xx codes — otherwise map to 502 so PHP
     // never emits a nonsense status line to the client.
     $safeCode = ($httpCode >= 400 && $httpCode < 600) ? $httpCode : 502;
     http_response_code($safeCode);
-    echo json_encode([
+    echo json_encode(array_merge([
         'success' => false,
         'message' => 'Webhook call failed (HTTP ' . (int)$httpCode . ')',
-        'http_code' => (int)$httpCode
-    ]);
+    ], $detail), JSON_INVALID_UTF8_SUBSTITUTE);
 }
