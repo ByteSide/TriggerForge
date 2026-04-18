@@ -311,6 +311,24 @@ require __DIR__ . '/lib/render.php';
         </div>
     </div>
     
+    <!-- Generic modal — title / body / action-row. Used by the response
+         viewer, the keyboard-shortcut cheatsheet, and any later feature
+         that needs a dialog. Content is populated by openModal() in app.js. -->
+    <div class="generic-modal-backdrop" id="genericModalBackdrop" aria-hidden="true" inert></div>
+    <div class="generic-modal" id="genericModal" role="dialog" aria-modal="true" aria-labelledby="genericModalTitle" aria-hidden="true" inert>
+        <div class="generic-modal-content">
+            <div class="generic-modal-header">
+                <i class='bx bx-info-circle generic-modal-icon' id="genericModalIcon" aria-hidden="true"></i>
+                <h3 class="generic-modal-title" id="genericModalTitle">Title</h3>
+                <button type="button" class="generic-modal-close" id="genericModalBtnClose" aria-label="Close">
+                    <i class='bx bx-x' aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="generic-modal-body" id="genericModalBody"></div>
+            <div class="generic-modal-footer" id="genericModalFooter"></div>
+        </div>
+    </div>
+
     <!-- Settings Modal -->
     <div class="settings-modal-backdrop" id="settingsModalBackdrop" aria-hidden="true" inert></div>
     <div class="settings-modal" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle" aria-hidden="true" inert>

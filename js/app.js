@@ -153,6 +153,7 @@ function initTriggerForge() {
     initLinkButtons();
     initModeToggle();
     initConfirmationModal();
+    initGenericModal();
     initSettings();
     initSearch();
     initKeyboardShortcuts();
@@ -1366,6 +1367,193 @@ function initSearch() {
     });
 }
 
+// === Generic Modal ===
+// Opens the #genericModal with the given title/icon, body (DOM node,
+// HTML string or plain text), a footer with configurable action buttons,
+// and an optional onClose callback. Returns {close} so callers can
+// programmatically dismiss.
+//
+// Used for: the response-viewer (2.2), the keyboard cheatsheet (1.2/2.1)
+// and any later feature that needs a dialog (history details, import
+// preview, etc.). The old showConfirmationModal is kept as-is for the
+// fire-confirm flow to keep its blast radius small.
+let _genericModalReturnFocus = null;
+let _genericModalOnClose = null;
+
+function initGenericModal() {
+    const modal = document.getElementById('genericModal');
+    const backdrop = document.getElementById('genericModalBackdrop');
+    const btnClose = document.getElementById('genericModalBtnClose');
+    if (!modal || !backdrop) return;
+
+    backdrop.addEventListener('click', closeGenericModal);
+    if (btnClose) btnClose.addEventListener('click', closeGenericModal);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeGenericModal();
+        }
+    });
+}
+
+function openModal(opts) {
+    const o = opts || {};
+    const modal = document.getElementById('genericModal');
+    const backdrop = document.getElementById('genericModalBackdrop');
+    const titleEl = document.getElementById('genericModalTitle');
+    const iconEl = document.getElementById('genericModalIcon');
+    const bodyEl = document.getElementById('genericModalBody');
+    const footerEl = document.getElementById('genericModalFooter');
+    if (!modal || !backdrop || !titleEl || !bodyEl || !footerEl) return null;
+
+    // Back-to-back openModal: close the existing one first so focus
+    // management and the prior onClose both run.
+    if (modal.classList.contains('active')) closeGenericModal();
+
+    titleEl.textContent = String(o.title || '');
+    if (iconEl) {
+        const safeIcon = typeof o.icon === 'string' && /^bx[a-z]*-[a-z0-9-]+$/.test(o.icon)
+            ? o.icon : 'bx-info-circle';
+        iconEl.className = 'bx ' + safeIcon + ' generic-modal-icon';
+    }
+
+    // Body: prefer DOM node > text > HTML string. bodyHtml assumes the
+    // caller has already escaped user-provided content.
+    bodyEl.innerHTML = '';
+    if (o.bodyEl instanceof Node) {
+        bodyEl.appendChild(o.bodyEl);
+    } else if (typeof o.bodyText === 'string') {
+        bodyEl.textContent = o.bodyText;
+    } else if (typeof o.bodyHtml === 'string') {
+        bodyEl.innerHTML = o.bodyHtml;
+    }
+
+    // Action buttons
+    footerEl.innerHTML = '';
+    const actions = Array.isArray(o.actions) ? o.actions : [];
+    actions.forEach(a => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        const variant = a && typeof a.variant === 'string' ? a.variant : 'default';
+        btn.className = 'generic-modal-btn generic-modal-btn-' + variant;
+        if (a && typeof a.icon === 'string' && /^bx[a-z]*-[a-z0-9-]+$/.test(a.icon)) {
+            const i = document.createElement('i');
+            i.className = 'bx ' + a.icon;
+            i.setAttribute('aria-hidden', 'true');
+            btn.appendChild(i);
+        }
+        const label = document.createElement('span');
+        label.textContent = a && a.label != null ? String(a.label) : 'OK';
+        btn.appendChild(label);
+        btn.addEventListener('click', () => {
+            let shouldClose = true;
+            if (a && typeof a.onClick === 'function') {
+                try {
+                    const r = a.onClick();
+                    if (r === false) shouldClose = false;
+                } catch (err) {
+                    console.error('[openModal] action onClick threw:', err);
+                }
+            }
+            if (shouldClose) closeGenericModal();
+        });
+        footerEl.appendChild(btn);
+    });
+
+    _genericModalOnClose = typeof o.onClose === 'function' ? o.onClose : null;
+
+    // Show
+    _genericModalReturnFocus = document.activeElement;
+    backdrop.classList.add('active');
+    modal.classList.add('active');
+    modal.removeAttribute('aria-hidden');
+    backdrop.removeAttribute('aria-hidden');
+    modal.removeAttribute('inert');
+    backdrop.removeAttribute('inert');
+    const container = document.querySelector('.container');
+    const scrollBtn = document.getElementById('scrollToTopBtn');
+    if (container) container.setAttribute('inert', '');
+    if (scrollBtn) scrollBtn.setAttribute('inert', '');
+    document.body.style.overflow = 'hidden';
+
+    setTimeout(() => {
+        if (!modal.classList.contains('active')) return;
+        const primary = footerEl.querySelector('.generic-modal-btn-primary');
+        const first = footerEl.querySelector('.generic-modal-btn');
+        const closeBtn = document.getElementById('genericModalBtnClose');
+        const target = primary || first || closeBtn;
+        if (target && typeof target.focus === 'function') target.focus();
+    }, 100);
+
+    return { close: closeGenericModal };
+}
+
+function closeGenericModal() {
+    const modal = document.getElementById('genericModal');
+    const backdrop = document.getElementById('genericModalBackdrop');
+    if (!modal || !backdrop) return;
+    if (!modal.classList.contains('active')) return;
+
+    modal.classList.remove('active');
+    backdrop.classList.remove('active');
+
+    const container = document.querySelector('.container');
+    const scrollBtn = document.getElementById('scrollToTopBtn');
+    if (container) container.removeAttribute('inert');
+    if (scrollBtn) scrollBtn.removeAttribute('inert');
+
+    if (_genericModalReturnFocus && typeof _genericModalReturnFocus.focus === 'function') {
+        try { _genericModalReturnFocus.focus(); } catch (e) { /* detached */ }
+    }
+    _genericModalReturnFocus = null;
+
+    modal.setAttribute('aria-hidden', 'true');
+    backdrop.setAttribute('aria-hidden', 'true');
+    modal.setAttribute('inert', '');
+    backdrop.setAttribute('inert', '');
+    document.body.style.overflow = '';
+
+    if (_genericModalOnClose) {
+        const cb = _genericModalOnClose;
+        _genericModalOnClose = null;
+        try { cb(); } catch (e) { console.error(e); }
+    }
+}
+
+/**
+ * Render the keyboard-shortcut cheatsheet via the generic modal. Opens
+ * when the user presses `?` (registered in initKeyboardShortcuts).
+ */
+function openCheatsheet() {
+    const ul = document.createElement('ul');
+    ul.className = 'cheatsheet-list';
+    const items = [
+        ['/',    'Focus the search bar'],
+        ['Ctrl+K', 'Focus the search bar (alternative)'],
+        ['1 – 9', 'Fire favorite #N (goes through the confirm flow)'],
+        ['t',    'Toggle TEST / PROD mode'],
+        ['?',    'Show this cheat sheet'],
+        ['Esc',  'Close modal or clear search']
+    ];
+    items.forEach(([key, desc]) => {
+        const li = document.createElement('li');
+        const kbd = document.createElement('kbd');
+        kbd.className = 'cheatsheet-key';
+        kbd.textContent = key;
+        const d = document.createElement('span');
+        d.className = 'cheatsheet-desc';
+        d.textContent = desc;
+        li.appendChild(kbd);
+        li.appendChild(d);
+        ul.appendChild(li);
+    });
+    openModal({
+        title: 'Keyboard Shortcuts',
+        icon: 'bx-keyboard',
+        bodyEl: ul,
+        actions: [{ label: 'Close', variant: 'default', icon: 'bx-x' }]
+    });
+}
+
 // === Trigger Widgets (Last-Triggered + Counter) ===
 // Small meta badges drawn inside each webhook button:
 //   • "3 min ago"-style stamp (state.settings.showLastTriggered, default on)
@@ -1491,9 +1679,18 @@ function initKeyboardShortcuts() {
         // Don't hijack keys while a modal is open — the user is in a
         // blocking dialog and ESC / button clicks are the intended exits.
         const anyModalOpen = document.querySelector(
-            '.confirmation-modal.active, .settings-modal.active'
+            '.confirmation-modal.active, .settings-modal.active, .generic-modal.active'
         );
         if (anyModalOpen) return;
+
+        // `?` (typically Shift+/) opens the keyboard cheatsheet. Must come
+        // BEFORE the Ctrl-check-free number branch below so the modifier
+        // doesn't need to match.
+        if (e.key === '?') {
+            e.preventDefault();
+            openCheatsheet();
+            return;
+        }
 
         // Number keys 1-9 → fire favorite at that slot.
         if (e.key >= '1' && e.key <= '9') {
