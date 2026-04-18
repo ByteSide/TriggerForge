@@ -185,10 +185,15 @@ function initServiceWorker() {
 
     // When the controller changes (user clicked "Reload" → skipWaiting()
     // → new SW activates), reload the page so the fresh JS/CSS become
-    // the live copy. Debounce to avoid reload loops.
+    // the live copy. Debounce to avoid reload loops. Skip on the very
+    // first install (no previous controller) — the disruptive reload
+    // there would feel like a bug; the SW will naturally take over on
+    // the next navigation.
     let refreshing = false;
+    const hadControllerAtBoot = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (refreshing) return;
+        if (!hadControllerAtBoot) return;
         refreshing = true;
         window.location.reload();
     });
